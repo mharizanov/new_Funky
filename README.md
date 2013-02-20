@@ -18,3 +18,5 @@ Uses external 8Mhz crystal (can switch to internal RC clock in software as descr
 Operates on 3.3V
 
 Read more http://harizanov.com/wiki/wiki-home/funky-sensor-v2/
+
+Licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
