@@ -3,9 +3,6 @@ import serial   ##sudo apt-get install python-serial
 import os
 from time import time, sleep
 
-#Set the framebuffer device to be the TFT
-os.environ["SDL_FBDEV"] = "/dev/fb1"
-
 print "Waiting for a IR command.."
 ser = serial.Serial('/dev/ttyACM0')
 ir = ser.readline()
