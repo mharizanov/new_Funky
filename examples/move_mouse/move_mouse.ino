@@ -2,7 +2,7 @@
 // Cal-Eng Leonardo mouse-movement example
 
 
-const int ledPin = 4;         // Mouse control LED 
+const int ledPin = 1;         // Mouse control LED 
 
 int mouseX = 0;
 int mouseY = 0;
