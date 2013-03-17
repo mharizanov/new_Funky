@@ -10218,7 +10218,7 @@ Source: http://ww1.microchip.com/downloads/en/DeviceDoc/22049b.pdf</description>
 <part name="P+12" library="SparkFun" deviceset="3.3V" device="" value="VCC"/>
 <part name="GND13" library="SparkFun" deviceset="GND" device=""/>
 <part name="U3" library="SparkFun" deviceset="ATMEGA32U4" device="QFN2" value="ATMEGA32U4"/>
-<part name="Y1" library="SparkFun" deviceset="CRYSTAL" device="5X3" value="8MHz"/>
+<part name="Y1" library="SparkFun" deviceset="CRYSTAL" device="5X3" value="16MHz"/>
 <part name="C8" library="SparkFun" deviceset="CAP" device="0402-CAP" value="22pF"/>
 <part name="C9" library="SparkFun" deviceset="CAP" device="0402-CAP" value="22pF"/>
 <part name="P+13" library="SparkFun" deviceset="3.3V" device="" value="VCC"/>
@@ -10676,6 +10676,7 @@ Source: http://ww1.microchip.com/downloads/en/DeviceDoc/22049b.pdf</description>
 <segment>
 <wire x1="83.82" y1="10.16" x2="83.82" y2="5.08" width="0.1524" layer="91"/>
 <pinref part="R6" gate="G$1" pin="1"/>
+<label x="50.8" y="-12.7" size="1.778" layer="95"/>
 <label x="76.2" y="10.16" size="1.778" layer="95"/>
 </segment>
 </net>
