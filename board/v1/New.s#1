@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.1">
+<eagle version="6.3">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -10218,7 +10218,7 @@ Source: http://ww1.microchip.com/downloads/en/DeviceDoc/22049b.pdf</description>
 <part name="P+12" library="SparkFun" deviceset="3.3V" device="" value="VCC"/>
 <part name="GND13" library="SparkFun" deviceset="GND" device=""/>
 <part name="U3" library="SparkFun" deviceset="ATMEGA32U4" device="QFN2" value="ATMEGA32U4"/>
-<part name="Y1" library="SparkFun" deviceset="CRYSTAL" device="5X3" value="8MHz"/>
+<part name="Y1" library="SparkFun" deviceset="CRYSTAL" device="5X3" value="16MHz"/>
 <part name="C8" library="SparkFun" deviceset="CAP" device="0402-CAP" value="22pF"/>
 <part name="C9" library="SparkFun" deviceset="CAP" device="0402-CAP" value="22pF"/>
 <part name="P+13" library="SparkFun" deviceset="3.3V" device="" value="VCC"/>

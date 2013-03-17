@@ -1,0 +1,22 @@
+###############################################################
+
+funkyv2.name=Funky v2 (Leonardo)
+funkyv2.upload.protocol=avr109
+funkyv2.upload.maximum_size=28672
+funkyv2.upload.speed=57600
+funkyv2.upload.disable_flushing=true
+funkyv2.bootloader.low_fuses=0xff
+funkyv2.bootloader.high_fuses=0xd8
+funkyv2.bootloader.extended_fuses=0xcb
+funkyv2.bootloader.path=caterina
+funkyv2.bootloader.file=Caterina-funkyv2.hex
+funkyv2.bootloader.unlock_bits=0x3F
+funkyv2.bootloader.lock_bits=0x2F
+funkyv2.build.mcu=atmega32u4
+funkyv2.build.f_cpu=8000000L
+funkyv2.build.vid=0x1D50
+funkyv2.build.pid=0x605D
+funkyv2.build.core=arduino
+funkyv2.build.variant=funkyv2
+
+##############################################################
