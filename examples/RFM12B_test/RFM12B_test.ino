@@ -1,7 +1,22 @@
 //--------------------------------------------------------------------------------------
+// Ultra low power test for the Funkyv2; Sends an incrementing value and the VCC readout every 10 seconds
 // harizanov.com
 // GNU GPL V3
 //--------------------------------------------------------------------------------------
+
+ /* 
+   I run this sketch with the following Atmega32u4 fuses
+   low_fuses=0x7f
+   high_fuses=0xd8
+   extended_fuses=0xcd
+   meaning:
+   external crystal 8Mhz, start-up 16K CK+65ms; 
+   Divide clock by 8 internally; [CKDIV8=0]  (We will start at 1Mhz since BOD level is 2.2V)
+   Boot Reset vector Enabled (default address=$0000); [BOOTRST=0]
+   Boot flsh size=2048K words
+   Serial program downloading (SPI) enabled; [SPIEN=0]
+   BOD=2.2V
+*/
 
 #include <avr/power.h>
 #include <avr/sleep.h>
@@ -31,11 +46,15 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Slee
 
 
 void setup() {
+  
+   
+  // Because of the fuses, we are running @ 1Mhz now.  
+  clock_prescale_set(clock_div_2);   //Speed up to 4Mhz so we can talk to the RFM12B over SPI
 
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
 
-  //power_adc_disable();
+  power_adc_disable();
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
   power_twi_disable();
@@ -74,18 +93,6 @@ void setup() {
 
   digitalWrite(LEDpin,LOW);  
 
-  pinMode(8,OUTPUT);
-  while(1) {
-     digitalWrite(8,HIGH);
-     Sleepy::loseSomeTime(8000);    
-     digitalWrite(8,LOW);
-     Sleepy::loseSomeTime(8000);         
-  }
-
-  while(readVcc() < 2200) 
-     Sleepy::loseSomeTime(1000);
-  
-  power_adc_disable();
 
   rf12_initialize(myNodeID,freq,network); // Initialize RFM12 with settings defined above 
   // Adjust low battery voltage to 2.2V
@@ -94,8 +101,7 @@ void setup() {
 
   power_spi_disable();   
 
-  Sleepy::loseSomeTime(8000);  // Sleep some more to allow power source to recover
-   
+  Sleepy::loseSomeTime(10000);          // Allow some time for power source to recover    
 }
 
 void loop() {
@@ -111,7 +117,7 @@ void loop() {
     rfwrite(); // Send data via RF 
   }
 
-  for(int j = 0; j < 1; j++) {    // Sleep for 5 minutes
+  for(int j = 0; j < 1; j++) {    // Sleep for j minutes
     Sleepy::loseSomeTime(10000); //JeeLabs power save function: enter low power mode for 60 seconds (valid range 16-65000 ms)
   }
 }

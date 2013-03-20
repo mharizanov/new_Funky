@@ -19,18 +19,13 @@ void setup() {
   digitalWrite(LEDpin,HIGH); 
   delay(6000);
   
-  Serial.end();
-  Serial1.end();
+  //Serial.end();
+  //Serial1.end();
   
-  for (int i=0; i<46; i++) {
-    pinMode(i, INPUT);
-    digita
-  }
-
-//  rf12_initialize(myNodeID,freq,network); // Initialize RFM12 with settings defined above 
-  // Adjust low battery voltage to 2.2V
- // rf12_control(0xC040);
- // rf12_sleep(0);                          // Put the RFM12 to sleep
+  rf12_initialize(myNodeID,freq,network); // Initialize RFM12 with settings defined above 
+  //Adjust low battery voltage to 2.2V
+  rf12_control(0xC040);
+  rf12_sleep(0);                          // Put the RFM12 to sleep
        
   power_adc_disable();
   power_usart0_disable();
@@ -39,7 +34,7 @@ void setup() {
   //Leave timer 0 going for delay() function
   power_timer0_disable();
   power_timer1_disable();
-  power_timer2_disable();
+  //power_timer2_disable();
   power_timer3_disable();
   power_usart1_disable();
 
