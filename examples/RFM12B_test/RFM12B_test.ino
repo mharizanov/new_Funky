@@ -45,15 +45,13 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Slee
  Payload temptx;
 
 
-void setup() {
-  
-   
+void setup() {   
   // Because of the fuses, we are running @ 1Mhz now.  
-  clock_prescale_set(clock_div_2);   //Speed up to 4Mhz so we can talk to the RFM12B over SPI
 
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
 
+  ADCSRA =0;
   power_adc_disable();
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
@@ -64,8 +62,19 @@ void setup() {
   power_timer3_disable();
   power_usart1_disable();
 
-  // Datasheet says that to power off the USB interface we have to do 'some' of: 
-   //       Detach USB interface 
+  // Switch to RC Clock 
+  UDINT  &= ~(1 << SUSPI); // UDINT.SUSPI = 0; Usb_ack_suspend
+  USBCON |= ( 1 <<FRZCLK); // USBCON.FRZCLK = 1; Usb_freeze_clock
+  PLLCSR &= ~(1 << PLLE); // PLLCSR.PLLE = 0; Disable_pll
+
+  CLKSEL0 |= (1 << RCE); // CLKSEL0.RCE = 1; Enable_RC_clock()
+  while ( (CLKSTA & (1 << RCON)) == 0){}	// while (CLKSTA.RCON != 1);  while (!RC_clock_ready())
+  CLKSEL0 &= ~(1 << CLKS);  // CLKSEL0.CLKS = 0; Select_RC_clock()
+  CLKSEL0 &= ~(1 << EXTE);  // CLKSEL0.EXTE = 0; Disable_external_clock
+  
+ 
+   // Datasheet says that to power off the USB interface we have to: 
+   //      Detach USB interface 
    //      Disable USB interface 
    //      Disable PLL 
    //      Disable USB pad regulator 
@@ -93,6 +102,7 @@ void setup() {
 
   digitalWrite(LEDpin,LOW);  
 
+  clock_prescale_set(clock_div_2);   //Speed up to 4Mhz so we can talk to the RFM12B over SPI
 
   rf12_initialize(myNodeID,freq,network); // Initialize RFM12 with settings defined above 
   // Adjust low battery voltage to 2.2V
@@ -112,7 +122,7 @@ void loop() {
   power_adc_disable();
   digitalWrite(LEDpin,LOW);  
   
-  if (temptx.supplyV > 2700) {// Only send if enough "juice" is available
+  if (temptx.supplyV > 2400) {// Only send if enough "juice" is available i.e supply V >2.4V
     temptx.temp++;
     rfwrite(); // Send data via RF 
   }
@@ -143,6 +153,7 @@ static void rfwrite(){
  long readVcc() {
    long result;
    // Read 1.1V reference against Vcc
+   ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
    Sleepy::loseSomeTime(16);
    ADCSRA |= _BV(ADSC); // Convert
