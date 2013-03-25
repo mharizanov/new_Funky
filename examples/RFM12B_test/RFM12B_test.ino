@@ -24,21 +24,38 @@
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
-ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Sleepy power saving
-
-#define myNodeID 27      // RF12 node ID in the range 1-30
-#define network 210      // RF12 Network group
-#define freq RF12_868MHZ // Frequency of RFM12B module
-
 #define LEDpin 1
 
+ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Sleepy power saving
+
+
+#include <EEPROM.h>
+
+// ID of the settings block
+#define CONFIG_VERSION "mjh"
+#define CONFIG_START 32
+
+struct StoreStruct {
+  // This is for mere detection if they are your settings
+  char version[4];
+  byte freq, network, myNodeID, ACK, sendp;
+} storage = {
+  CONFIG_VERSION,
+  // The default values
+  RF12_868MHZ, 210, 26, false, 20
+};
+
+static byte value, stack[20], top;
+
+
+byte usb;  // Are we powered via the USB? If so, do not disable it
 
 //###############################################################
 //Data Structure to be sent
 //###############################################################
 
  typedef struct {
-  	  int temp;	// Temp variable
+     int temp;	// Temp variable
   	  int supplyV;	// Supply voltage
  } Payload;
 
@@ -51,17 +68,130 @@ void setup() {
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
 
+  USBCON = USBCON | B00010000; 
+  delay(150);  // Wait at least 150ms (necessary)
+
+  loadConfig();
+ 
+  if (UDINT & B00000001){
+      // USB Disconnected code here
+      usb=false;
+      powersave();
+      clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
+  }
+  else {
+      // USB is connected code here
+      usb=true;
+      clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+      for(int i=0;i<10;i++){
+          digitalWrite(LEDpin,LOW); 
+          delay(50);
+          digitalWrite(LEDpin,HIGH); 
+          delay(50);
+      }
+
+    Serial.begin(57600);
+    showString(PSTR("\n[Funky v2]\n"));   
+    showHelp();
+
+    unsigned long start=millis();
+    
+    while(1) {
+    if (Serial.available())
+        {
+          handleInput(Serial.read());
+          start=millis();
+        }
+    if((millis()-start)>30000) break;
+    }
+
+    showString(PSTR("\nStarting sketch.."));   
+      
+  }
+ 
+  digitalWrite(LEDpin,LOW);  
+ 
+  rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
+  // Adjust low battery voltage to 2.2V
+  rf12_control(0xC000);
+  rf12_sleep(0);                          // Put the RFM12 to sleep
+
+  power_spi_disable();   
+
+  if(!usb) { Sleepy::loseSomeTime(10000); }         // Allow some time for power source to recover    
+
+
+}
+
+void loop() {
+  
+  digitalWrite(LEDpin,HIGH);  
+  power_adc_enable();
+  temptx.supplyV = readVcc(); // Get supply voltage
+  power_adc_disable();
+  digitalWrite(LEDpin,LOW);  
+  
+  if (temptx.supplyV > 2400) {// Only send if enough "juice" is available i.e supply V >2.4V
+    temptx.temp++;
+    rfwrite(); // Send data via RF 
+  }
+
+  for(int j = 0; j < 1; j++) {    // Sleep for j minutes
+    if(!usb) Sleepy::loseSomeTime(10000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+    else delay(10000);
+    
+  }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Send payload data via RF
+//--------------------------------------------------------------------------------------------------
+static void rfwrite(){
+      power_spi_enable();
+      rf12_sleep(-1);              // Wake up RF module
+      while (!rf12_canSend())
+        rf12_recvDone();
+      rf12_sendStart(0, &temptx, sizeof temptx); 
+      rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
+      rf12_sleep(0);              // Put RF module to sleep 
+      power_spi_disable();      
+}
+
+  
+//--------------------------------------------------------------------------------------------------
+// Read current supply voltage
+//--------------------------------------------------------------------------------------------------
+ long readVcc() {
+   long result;
+   // Read 1.1V reference against Vcc
+   if(!usb) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+   ADCSRA |= bit(ADEN); 
+   ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
+   Sleepy::loseSomeTime(16);
+   ADCSRA |= _BV(ADSC); // Convert
+   while (bit_is_set(ADCSRA,ADSC));
+   result = ADCL;
+   result |= ADCH<<8;
+   result = 1126400L / result; // Back-calculate Vcc in mV
+   ADCSRA &= ~ bit(ADEN); 
+   if(!usb) clock_prescale_set(clock_div_2);     
+   return result;
+} 
+//########################################################################################################################
+
+
+void powersave() {
   ADCSRA =0;
   power_adc_disable();
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
   power_twi_disable();
-   //Leave timer 0 going for delay() function
+  power_timer0_disable();
   power_timer1_disable();
-   // power_timer2_disable();
   power_timer3_disable();
+  PRR1 |= (uint8_t)(1 << 4);  //PRTIM4
   power_usart1_disable();
-
+  
   // Switch to RC Clock 
   UDINT  &= ~(1 << SUSPI); // UDINT.SUSPI = 0; Usb_ack_suspend
   USBCON |= ( 1 <<FRZCLK); // USBCON.FRZCLK = 1; Usb_freeze_clock
@@ -71,8 +201,7 @@ void setup() {
   while ( (CLKSTA & (1 << RCON)) == 0){}	// while (CLKSTA.RCON != 1);  while (!RC_clock_ready())
   CLKSEL0 &= ~(1 << CLKS);  // CLKSEL0.CLKS = 0; Select_RC_clock()
   CLKSEL0 &= ~(1 << EXTE);  // CLKSEL0.EXTE = 0; Disable_external_clock
-  
- 
+   
    // Datasheet says that to power off the USB interface we have to: 
    //      Detach USB interface 
    //      Disable USB interface 
@@ -99,70 +228,96 @@ void setup() {
     
    // Physically detact USB (by disconnecting internal pull-ups on D+ and D-) 
    UDCON |= (1 << DETACH); 
+   
+   power_usb_disable();  // Keep it here, after the USB power down
 
-  digitalWrite(LEDpin,LOW);  
-
-  clock_prescale_set(clock_div_2);   //Speed up to 4Mhz so we can talk to the RFM12B over SPI
-
-  rf12_initialize(myNodeID,freq,network); // Initialize RFM12 with settings defined above 
-  // Adjust low battery voltage to 2.2V
-  rf12_control(0xC000);
-  rf12_sleep(0);                          // Put the RFM12 to sleep
-
-  power_spi_disable();   
-
-  Sleepy::loseSomeTime(10000);          // Allow some time for power source to recover    
 }
 
-void loop() {
-  
-  digitalWrite(LEDpin,HIGH);  
-  power_adc_enable();
-  temptx.supplyV = readVcc(); // Get supply voltage
-  power_adc_disable();
-  digitalWrite(LEDpin,LOW);  
-  
-  if (temptx.supplyV > 2400) {// Only send if enough "juice" is available i.e supply V >2.4V
-    temptx.temp++;
-    rfwrite(); // Send data via RF 
-  }
-
-  for(int j = 0; j < 1; j++) {    // Sleep for j minutes
-    Sleepy::loseSomeTime(10000); //JeeLabs power save function: enter low power mode for 60 seconds (valid range 16-65000 ms)
-  }
+void loadConfig() {
+  // To make sure there are settings, and they are ours
+  // If nothing is found it will use the default settings.
+  if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
+      EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
+      EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2])
+    for (unsigned int t=0; t<sizeof(storage); t++)
+      *((char*)&storage + t) = EEPROM.read(CONFIG_START + t);
 }
 
-//--------------------------------------------------------------------------------------------------
-// Send payload data via RF
-//--------------------------------------------------------------------------------------------------
-static void rfwrite(){
-      power_spi_enable();
-      rf12_sleep(-1);              // Wake up RF module
-      while (!rf12_canSend())
-        rf12_recvDone();
-      rf12_sendStart(0, &temptx, sizeof temptx); 
-      rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
-      rf12_sleep(0);              // Put RF module to sleep 
-      power_spi_disable();      
+void saveConfig() {
+  for (unsigned int t=0; t<sizeof(storage); t++)
+    EEPROM.write(CONFIG_START + t, *((char*)&storage + t));
 }
 
-  
-//--------------------------------------------------------------------------------------------------
-// Read current supply voltage
-//--------------------------------------------------------------------------------------------------
- long readVcc() {
-   long result;
-   // Read 1.1V reference against Vcc
-   ADCSRA |= bit(ADEN); 
-   ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(16);
-   ADCSRA |= _BV(ADSC); // Convert
-   while (bit_is_set(ADCSRA,ADSC));
-   result = ADCL;
-   result |= ADCH<<8;
-   result = 1126400L / result; // Back-calculate Vcc in mV
-   ADCSRA &= ~ bit(ADEN); 
-   return result;
-} 
-//########################################################################################################################
+static void handleInput (char c) {
+    if ('0' <= c && c <= '9')
+        value = 10 * value + c - '0';
+    else if (c == ',') {
+        if (top < sizeof stack)
+            stack[top++] = value;
+        value = 0;
+    } else if ('a' <= c && c <='z') {
+        showString(PSTR("> "));
+        Serial.print((int) value);
+        Serial.println(c);
+        switch (c) {
+            default:
+                showHelp();
+                break;
 
+             case 'i': // set node id
+                  storage.myNodeID = value;
+                  saveConfig();
+                break;             
+            case 'b': // set band: 4 = 433, 8 = 868, 9 = 915
+                  value = value == 8 ? RF12_868MHZ :
+                          value == 9 ? RF12_915MHZ : RF12_433MHZ;
+                  storage.freq =value;
+                  saveConfig();
+                break;             
+            case 'g': // set network group
+                  storage.network = value;
+                  saveConfig();
+                break;
+        }
+        value = top = 0;
+        memset(stack, 0, sizeof stack);
+    } else if (c > ' ')
+        showHelp();
+
+        rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
+}
+
+
+char helpText1[] PROGMEM = 
+    "\n"
+    "Available commands:" "\n"
+    "  <nn> i     - set node ID (standard node ids are 1..26)" "\n"
+    "  <n> b      - set MHz band (4 = 433, 8 = 868, 9 = 915)" "\n"
+    "  <nnn> g    - set network group" "\n"
+;
+
+static void showString (PGM_P s) {
+    for (;;) {
+        char c = pgm_read_byte(s++);
+        if (c == 0)
+            break;
+        if (c == '\n')
+            Serial.print('\r');
+        Serial.print(c);
+    }
+}
+
+static void showHelp () {
+    showString(helpText1);
+    showString(PSTR("Current configuration:\n"));
+
+    showString(PSTR("NodeID: "));
+    Serial.print(storage.myNodeID,DEC);
+    showString(PSTR(", Group: "));
+    Serial.print(storage.network,DEC);
+    showString(PSTR(", Band: "));
+    static word bands[4] = { 315, 433, 868, 915 };
+    word band = storage.freq;
+    Serial.print(bands[band],DEC);
+    showString(PSTR(" MHz \n"));
+}
