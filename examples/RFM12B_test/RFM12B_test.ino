@@ -26,8 +26,11 @@
 
 #define LEDpin 1
 
-ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Sleepy power saving
+#define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
+#define RETRY_LIMIT 5     // Maximum number of times to retry
+#define ACK_TIME 15       // Number of milliseconds to wait for an ack
 
+ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Sleepy power saving
 
 #include <EEPROM.h>
 
@@ -48,7 +51,7 @@ struct StoreStruct {
 static byte value, stack[20], top;
 
 
-byte usb;  // Are we powered via the USB? If so, do not disable it
+static byte usb;  // Are we powered via the USB? If so, do not disable it
 
 //###############################################################
 //Data Structure to be sent
@@ -68,20 +71,20 @@ void setup() {
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
 
+  loadConfig();
+
   USBCON = USBCON | B00010000; 
   delay(150);  // Wait at least 150ms (necessary)
-
-  loadConfig();
  
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
-      usb=false;
+      usb=0;
       powersave();
       clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
   }
   else {
       // USB is connected 
-      usb=true;
+      usb=1;
       clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
       for(int i=0;i<10;i++){
           digitalWrite(LEDpin,LOW); 
@@ -90,24 +93,24 @@ void setup() {
           delay(50);
       }
 
-    Serial.begin(57600);  // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope don't wonder where is Serial.begin
-    showString(PSTR("\n[Funky v2]\n"));   
-    showHelp();
+      Serial.begin(57600);  // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope don't wonder where is Serial.begin
+      showString(PSTR("\n[Funky v2]\n"));   
+      showHelp();
 
-    // Wait for configuration for 30 seconds, then timeout and start the sketch
-    unsigned long start=millis();
+      // Wait for configuration for 30 seconds, then timeout and start the sketch
+      unsigned long start=millis();
     
-    while((millis()-start)<30000) {
-    if (Serial.available())
+      while((millis()-start)<30000) {
+      if (Serial.available())
         {
           handleInput(Serial.read());
           start=millis();
         }
-    }
+      }
 
-    showString(PSTR("\nStarting sketch.."));   
-      
-  }
+      showString(PSTR("\nStarting sketch.."));   
+      Serial.flush();  
+    }
  
   digitalWrite(LEDpin,LOW);  
  
@@ -118,7 +121,7 @@ void setup() {
 
   power_spi_disable();   
 
-  if(!usb) { Sleepy::loseSomeTime(10000); }         // Allow some time for power source to recover    
+  //if(!usb) { Sleepy::loseSomeTime(10000); }         // Allow some time for power source to recover    
 
 
 }
@@ -137,9 +140,10 @@ void loop() {
   }
 
   for(int j = 0; j < 1; j++) {    // Sleep for j minutes
-    if(!usb) Sleepy::loseSomeTime(10000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
-    else delay(10000);
-    
+    if(usb==0) 
+      Sleepy::loseSomeTime(storage.sendp*1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+    else 
+      delay(storage.sendp*1000);    
   }
 }
 
@@ -148,6 +152,27 @@ void loop() {
 //--------------------------------------------------------------------------------------------------
 static void rfwrite(){
       power_spi_enable();
+    
+      if(storage.ACK) {
+         for (byte i = 0; i <= RETRY_LIMIT; ++i) {  // tx and wait for ack up to RETRY_LIMIT times
+           rf12_sleep(-1);              // Wake up RF module
+           while (!rf12_canSend())
+              rf12_recvDone();
+           rf12_sendStart(RF12_HDR_ACK, &temptx, sizeof temptx); 
+           rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
+           byte acked = waitForAck();  // Wait for ACK
+           rf12_sleep(0);              // Put RF module to sleep
+           if (acked) {       
+             power_spi_disable();        
+             return; 
+           }       // Return if ACK received
+       
+        if(!usb) Sleepy::loseSomeTime(RETRY_PERIOD*1000); // If no ack received wait and try again
+        else delay(RETRY_PERIOD*1000);       
+       }
+     }
+     else {
+  
       rf12_sleep(-1);              // Wake up RF module
       while (!rf12_canSend())
         rf12_recvDone();
@@ -155,7 +180,20 @@ static void rfwrite(){
       rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
       rf12_sleep(0);              // Put RF module to sleep 
       power_spi_disable();      
+     }
 }
+
+
+
+  static byte waitForAck() {
+   MilliTimer ackTimer;
+   while (!ackTimer.poll(ACK_TIME)) {
+     if (rf12_recvDone() && rf12_crc == 0 &&
+        rf12_hdr == (RF12_HDR_DST | RF12_HDR_CTL | storage.myNodeID))
+        return 1;
+     }
+   return 0;
+  }
 
   
 //--------------------------------------------------------------------------------------------------
@@ -278,6 +316,19 @@ static void handleInput (char c) {
                   storage.network = value;
                   saveConfig();
                 break;
+            case 'p': // set sending period
+                  storage.sendp = value;
+                  saveConfig();
+                break;
+            case 'a': // set ACK
+                  if(value < 2){  // only 1 and 0 allowed
+                    storage.ACK = value;
+                    saveConfig();
+                  }
+                break;
+                
+                
+                
         }
         value = top = 0;
         memset(stack, 0, sizeof stack);
@@ -285,6 +336,7 @@ static void handleInput (char c) {
         showHelp();
 
         rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
+    
 }
 
 
@@ -293,7 +345,11 @@ char helpText1[] PROGMEM =
     "Available commands:" "\n"
     "  <nn> i     - set node ID (standard node ids are 1..26)" "\n"
     "  <n> b      - set MHz band (4 = 433, 8 = 868, 9 = 915)" "\n"
-    "  <nnn> g    - set network group" "\n"
+    "  <nnn> g    - set network group (default = 210)" "\n"
+    "  <n> a      - set ACK flag (1 = request ACK, 0 = do not requst ACK - default)" "\n"
+    "  <nnn> p    - set period for sending in seconds ( default = 20 seconds)" "\n"   
+    "\n\n This configuration menu will timeout after 30 seconds of inactivity and sketch will start" "\n"       
+    "\n"
 ;
 
 static void showString (PGM_P s) {
@@ -307,7 +363,7 @@ static void showString (PGM_P s) {
     }
 }
 
-static void showHelp () {
+static void showHelp() {
     showString(helpText1);
     showString(PSTR("\nCurrent configuration:\n"));
 
@@ -319,6 +375,12 @@ static void showHelp () {
     static word bands[4] = { 315, 433, 868, 915 };
     word band = storage.freq;
     Serial.print(bands[band],DEC);
-    showString(PSTR(" MHz \n"));
+    showString(PSTR(" MHz"));
+    showString(PSTR(", ACKs: "));
+    Serial.print(storage.ACK,DEC);
+    showString(PSTR(", Sending every "));
+    Serial.print(storage.sendp,DEC);
+    showString(PSTR(" seconds\n"));
 }
+
 
