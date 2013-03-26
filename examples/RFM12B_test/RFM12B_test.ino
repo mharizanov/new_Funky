@@ -55,7 +55,7 @@ byte usb;  // Are we powered via the USB? If so, do not disable it
 //###############################################################
 
  typedef struct {
-     int temp;	// Temp variable
+  	  int temp;	// Temp variable
   	  int supplyV;	// Supply voltage
  } Payload;
 
@@ -74,15 +74,15 @@ void setup() {
   loadConfig();
  
   if (UDINT & B00000001){
-      // USB Disconnected code here
+      // USB Disconnected; We are running on battery so we must save power
       usb=false;
       powersave();
       clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
   }
   else {
-      // USB is connected code here
+      // USB is connected 
       usb=true;
-      clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+      clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
       for(int i=0;i<10;i++){
           digitalWrite(LEDpin,LOW); 
           delay(50);
@@ -90,19 +90,19 @@ void setup() {
           delay(50);
       }
 
-    Serial.begin(57600);
+    Serial.begin(57600);  // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope don't wonder where is Serial.begin
     showString(PSTR("\n[Funky v2]\n"));   
     showHelp();
 
+    // Wait for configuration for 30 seconds, then timeout and start the sketch
     unsigned long start=millis();
     
-    while(1) {
+    while((millis()-start)<30000) {
     if (Serial.available())
         {
           handleInput(Serial.read());
           start=millis();
         }
-    if((millis()-start)>30000) break;
     }
 
     showString(PSTR("\nStarting sketch.."));   
@@ -309,7 +309,7 @@ static void showString (PGM_P s) {
 
 static void showHelp () {
     showString(helpText1);
-    showString(PSTR("Current configuration:\n"));
+    showString(PSTR("\nCurrent configuration:\n"));
 
     showString(PSTR("NodeID: "));
     Serial.print(storage.myNodeID,DEC);
@@ -321,3 +321,4 @@ static void showHelp () {
     Serial.print(bands[band],DEC);
     showString(PSTR(" MHz \n"));
 }
+
