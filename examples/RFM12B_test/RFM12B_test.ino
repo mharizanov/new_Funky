@@ -74,7 +74,8 @@ void setup() {
   loadConfig();
 
   USBCON = USBCON | B00010000; 
-  delay(150);  // Wait at least 150ms (necessary)
+
+  delay(300);  // Wait at least between 150ms and 300ms (necessary); Slower host like Raspberry Pi needs more time
  
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
@@ -202,7 +203,7 @@ static void rfwrite(){
  long readVcc() {
    long result;
    // Read 1.1V reference against Vcc
-   if(!usb) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
    Sleepy::loseSomeTime(16);
@@ -212,7 +213,7 @@ static void rfwrite(){
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-   if(!usb) clock_prescale_set(clock_div_2);     
+   if(usb==0) clock_prescale_set(clock_div_2);     
    return result;
 } 
 //########################################################################################################################
