@@ -213,6 +213,7 @@ void setup() {
     activityLed(1);
     // set the data rate for the NewSoftmySerial port
     Serial.begin(9600);
+    
     showString(PSTR("\n[RFM2Pi]\n"));   
     
     if (rf12_config()) {
