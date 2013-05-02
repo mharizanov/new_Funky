@@ -1,4 +1,13 @@
 #include <avr\pgmspace.h>
+#include "coin8.h"
+
+
+volatile unsigned char *play_sample;
+volatile unsigned short play_sample_length;
+volatile unsigned short play_sample_ptr;
+volatile int play_pin;
+
+
 #define TIMER4_RESOLUTION 1023UL
 
 #define PLL_FREQ 48000000UL
@@ -6,7 +15,22 @@
 unsigned long pwmPeriod = 0;
 
 ISR(TIMER4_OVF_vect) {
+ // digitalWrite(13,!digitalRead(13));
+  
  
+  if(play_sample_length)
+  {
+    setPwmDuty( map(pgm_read_byte(&play_sample[play_sample_ptr]), 0, 255, 0, 1023) );
+
+    play_sample_ptr++;
+
+    if(play_sample_ptr == play_sample_length)
+    {
+  play_sample_ptr = 0;
+  play_sample_length = coin8_len;
+    }
+  }
+
 }
 
 void enable_intr(){
@@ -128,15 +152,34 @@ unsigned char clockSelectBits = 0;
 
 void setup() {
 
+play_sample_length = 0;
+play_pin = 13;
 pinMode(13, OUTPUT);
-digitalWrite(13,LOW);
-initialize(123456);
-setPwmDuty(512);    //1024/3
+initialize(8000);
+enable_intr();
+digitalWrite(13,HIGH);
+
+
+  
+  
+//setPwmDuty(512);    //1024/3
+
 start();
+//digitalWrite(13,HIGH);
+
+play(coin8, coin8_len);
 
 }
 void loop(){
 }
 
 
+void play(const unsigned char *sample, const unsigned short length)
+{
+  noInterrupts();
+  play_sample = (unsigned char *)sample;
+  play_sample_ptr = 0;
+  play_sample_length = length;
+  interrupts();
+}
 

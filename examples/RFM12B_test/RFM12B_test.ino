@@ -68,6 +68,9 @@ static byte usb;  // Are we powered via the USB? If so, do not disable it
 void setup() {   
   // Because of the fuses, we are running @ 1Mhz now.  
 
+  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(A5,LOW); //Start the RFM12B
+    
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
 
