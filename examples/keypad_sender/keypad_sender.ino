@@ -50,8 +50,13 @@ struct StoreStruct {
 
 static byte value, stack[20], top;
 
-
 static byte usb;  // Are we powered via the USB? If so, do not disable it
+
+int pos = 0; // position in read buffer
+char buffer[32];
+unsigned long started;           
+char inByte;
+
 
 //###############################################################
 //Data Structure to be sent
@@ -64,6 +69,8 @@ static byte usb;  // Are we powered via the USB? If so, do not disable it
 
  Payload temptx;
 
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(8, 13); // RX, TX
 
 void setup() {   
   // Because of the fuses, we are running @ 1Mhz now.  
@@ -84,7 +91,7 @@ void setup() {
       // USB Disconnected; We are running on battery so we must save power
       usb=0;
       powersave();
-      clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
+      clock_prescale_set(clock_div_1);   //Run at 4Mhz so we can talk to the RFM12B over SPI
   }
   else {
       // USB is connected 
@@ -117,7 +124,8 @@ void setup() {
     }
  
   digitalWrite(LEDpin,LOW);  
- 
+
+  
   rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
   // Adjust low battery voltage to 2.2V
   rf12_control(0xC000);
@@ -125,32 +133,47 @@ void setup() {
 
   power_spi_disable();   
 
+  mySerial.begin(9600);
+  
   //if(!usb) { Sleepy::loseSomeTime(10000); }         // Allow some time for power source to recover    
+
+
+      for(int i=0;i<10;i++){
+          digitalWrite(LEDpin,LOW); 
+          delay(30);
+          digitalWrite(LEDpin,HIGH); 
+          delay(30);
+      }
 
 
 }
 
 void loop() {
-  
+
   digitalWrite(LEDpin,HIGH);  
   power_adc_enable();
   temptx.supplyV = readVcc(); // Get supply voltage
   power_adc_disable();
   digitalWrite(LEDpin,LOW);  
-  
-  if (temptx.supplyV > 2400) {// Only send if enough "juice" is available i.e supply V >2.4V
-    temptx.temp++;
-    rfwrite(); // Send data via RF 
-  }
 
-  for(int j = 0; j < 1; j++) {    // Sleep for j minutes
-    if(usb==0) 
-      Sleepy::loseSomeTime(storage.sendp*1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
-    else 
-      delay(storage.sendp*1000);    
-  }
+  float weight=readinput();
+  weight*=100;    //convert into int for smaller packet size
+  temptx.temp=(int)weight;  
+
+  if(weight!=0) rfwrite(); // Send data via RF 
+
+  attachInterrupt(1, wake, RISING);
+  
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  noInterrupts();
+  sleep_enable();
+  interrupts();
+  sleep_cpu();
+  sleep_disable();
+
 }
 
+void wake() {}
 //--------------------------------------------------------------------------------------------------
 // Send payload data via RF
 //--------------------------------------------------------------------------------------------------
@@ -216,7 +239,7 @@ static void rfwrite(){
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-   if(usb==0) clock_prescale_set(clock_div_2);     
+   if(usb==0) clock_prescale_set(clock_div_1);     
    return result;
 } 
 //########################################################################################################################
@@ -228,12 +251,13 @@ void powersave() {
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
   power_twi_disable();
-  power_timer0_disable();
-  power_timer1_disable();
-  power_timer3_disable();
+//  power_timer0_disable();
+//  power_timer1_disable();
+//  power_timer3_disable();
   PRR1 |= (uint8_t)(1 << 4);  //PRTIM4
   power_usart1_disable();
   
+  /*
   // Switch to RC Clock 
   UDINT  &= ~(1 << SUSPI); // UDINT.SUSPI = 0; Usb_ack_suspend
   USBCON |= ( 1 <<FRZCLK); // USBCON.FRZCLK = 1; Usb_freeze_clock
@@ -243,6 +267,8 @@ void powersave() {
   while ( (CLKSTA & (1 << RCON)) == 0){}	// while (CLKSTA.RCON != 1);  while (!RC_clock_ready())
   CLKSEL0 &= ~(1 << CLKS);  // CLKSEL0.CLKS = 0; Select_RC_clock()
   CLKSEL0 &= ~(1 << EXTE);  // CLKSEL0.EXTE = 0; Disable_external_clock
+   
+   */
    
    // Datasheet says that to power off the USB interface we have to: 
    //      Detach USB interface 
@@ -387,4 +413,52 @@ static void showHelp() {
     showString(PSTR(" seconds\n"));
 }
 
+float readinput() {
+  
+  float f=0;
+  started=millis();
+  pos=0;
+  memset(buffer,0,sizeof(buffer));
+  inByte=0;
+                  
+  //Wait 10 seconds for input
+  while((millis()-started)<10000) {
+  while (mySerial.available() > 0)
+            {
+                // read the incoming byte:
+                inByte = mySerial.read();
+                
+                if(inByte=='A' || inByte=='B' ||inByte=='C' ||inByte=='D' ) {
+                  //process and send       
+                  buffer[pos] = 0;
+                  f = atof(buffer);
+                 // printFloat(f,3);
+                  started=(millis()-50000);
+                  break;              
+                }
+     
+                //Since we don't have '.' on the keypad, substitute the '*'s with '.' for decimal point
+                if(inByte=='*') inByte='.';               
+                
+                //if the user pressed '#', we reset the entry
+                if(inByte=='#') {
+                  pos=0;               
+                  memset(buffer,0,sizeof(buffer));
+                  break;
+                }
 
+
+                // add to our read buffer                
+                buffer[pos] = inByte;
+                pos++;
+                if (pos >= sizeof(buffer))
+                      pos = 0;
+                      
+                //reset the timeout counter      
+                started=millis();
+        }
+  } //20 seconds for input
+ 
+ return f;
+
+}
