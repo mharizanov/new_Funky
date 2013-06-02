@@ -63,7 +63,7 @@ char inByte;
 //###############################################################
 
  typedef struct {
-  	  int temp;	// Temp variable
+     int temp;	// Temp variable
   	  int supplyV;	// Supply voltage
  } Payload;
 
