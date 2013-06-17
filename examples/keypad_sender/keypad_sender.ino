@@ -21,7 +21,9 @@
 #include <avr/power.h>
 #include <avr/sleep.h>
 
-#include <JeeLib.h> // https://github.com/jcw/jeelib
+
+#include "Portsx.h"
+#include "RF12x.h" // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
 #define LEDpin 1
@@ -77,6 +79,8 @@ void setup() {
 
   pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
   digitalWrite(A5,LOW); //Start the RFM12B
+    
+  pinMode(2,INPUT); // we will wake up from INT1
     
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
@@ -160,6 +164,10 @@ void loop() {
   weight*=100;    //convert into int for smaller packet size
   temptx.temp=(int)weight;  
 
+  inByte-='A'; // make up node id for the four buttons A-D
+  inByte+=storage.myNodeID;   
+  rf12_setNodeID(inByte);
+  
   if(weight!=0) rfwrite(); // Send data via RF 
 
   attachInterrupt(1, wake, RISING);
@@ -232,7 +240,7 @@ static void rfwrite(){
    if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(16);
+   Sleepy::loseSomeTime(24);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;
@@ -257,7 +265,7 @@ void powersave() {
   PRR1 |= (uint8_t)(1 << 4);  //PRTIM4
   power_usart1_disable();
   
-  /*
+  
   // Switch to RC Clock 
   UDINT  &= ~(1 << SUSPI); // UDINT.SUSPI = 0; Usb_ack_suspend
   USBCON |= ( 1 <<FRZCLK); // USBCON.FRZCLK = 1; Usb_freeze_clock
@@ -268,7 +276,6 @@ void powersave() {
   CLKSEL0 &= ~(1 << CLKS);  // CLKSEL0.CLKS = 0; Select_RC_clock()
   CLKSEL0 &= ~(1 << EXTE);  // CLKSEL0.EXTE = 0; Disable_external_clock
    
-   */
    
    // Datasheet says that to power off the USB interface we have to: 
    //      Detach USB interface 
