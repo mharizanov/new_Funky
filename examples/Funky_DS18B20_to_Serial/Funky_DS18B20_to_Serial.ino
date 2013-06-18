@@ -3,7 +3,7 @@
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
 #define TEMPERATURE_PRECISION 9
  
-#define ONE_WIRE_BUS A0   
+#define ONE_WIRE_BUS 8
 #define tempPower 2      
 
 
