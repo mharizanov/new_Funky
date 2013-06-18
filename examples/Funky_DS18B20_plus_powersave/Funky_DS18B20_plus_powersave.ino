@@ -34,7 +34,7 @@
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
 #define TEMPERATURE_PRECISION 9
  
-#define ONE_WIRE_BUS A0  // pad 5 of the Funky2
+#define ONE_WIRE_BUS 8  // pad 5 of the Funky2
 #define tempPower 2     // Power pin is connected pad 6 on the Funky2
 
 
@@ -63,7 +63,7 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Slee
 #include <EEPROM.h>
 
 // ID of the settings block
-#define CONFIG_VERSION "dd"
+#define CONFIG_VERSION "mjh" //keep this 3 chars long
 #define CONFIG_START 32
 
 struct StoreStruct {
@@ -73,7 +73,7 @@ struct StoreStruct {
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_433MHZ, 210, 18, false, 5
+  RF12_868MHZ, 210, 27, false, 5
 };
 
 static byte value, stack[20], top;
