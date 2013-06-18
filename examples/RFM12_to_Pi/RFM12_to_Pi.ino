@@ -211,9 +211,11 @@ static void handleInput (char c) {
 void setup() {
     
     activityLed(1);
-    // set the data rate for the NewSoftmySerial port
     Serial.begin(9600);
     
+    pinMode(A5,OUTPUT); // RFM12B power control pin
+    digitalWrite(A5,LOW); //Make sure the RFM12B is on
+
     showString(PSTR("\n[RFM2Pi]\n"));   
     
     if (rf12_config()) {
