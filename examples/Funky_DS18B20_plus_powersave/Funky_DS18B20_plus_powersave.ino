@@ -207,16 +207,16 @@ void loop() {
   rfwrite(); // Send data via RF 
 
   for(int j = 0; j < 1; j++) {    // Sleep for j minutes
-    dodelay(storage.sendp); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+    dodelay(storage.sendp*1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
   }
 }
 
 
 void dodelay(unsigned int ms){
     if(usb==0) 
-      Sleepy::loseSomeTime(ms*1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+      Sleepy::loseSomeTime(ms); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
     else 
-      delay(ms*1000);    
+      delay(ms);    
 }
 
 

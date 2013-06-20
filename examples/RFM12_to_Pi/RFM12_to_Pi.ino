@@ -131,9 +131,12 @@ static void showHelp () {
     showString(PSTR(" MHz "));
 
     showString(PSTR(" Lock: "));
-    Serial.println(config.lock, DEC);
+    Serial.println(config.lock, DEC); 
 
-    rf12_config();
+   if (!rf12_config())
+        showString(PSTR("config failed"));
+        
+       
 }
 
 static void handleInput (char c) {
@@ -215,6 +218,7 @@ void setup() {
     
     pinMode(A5,OUTPUT); // RFM12B power control pin
     digitalWrite(A5,LOW); //Make sure the RFM12B is on
+    delay(150);
 
     showString(PSTR("\n[RFM2Pi]\n"));   
     
@@ -233,7 +237,7 @@ void setup() {
     showHelp();
     delay(2000);
 
-    rf12_control(0xC049);   
+    rf12_control(0xC000);   
     activityLed(0);
 }
 
