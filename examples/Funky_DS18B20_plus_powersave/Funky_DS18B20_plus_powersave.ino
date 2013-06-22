@@ -183,7 +183,6 @@ void loop() {
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output  
   digitalWrite(tempPower, HIGH); // turn DS18B20 sensor on
   dodelay(10);
-  digitalWrite(LEDpin,HIGH);   // LED on  
   sensors.requestTemperatures(); // Send the command to get temperatures  
 
   temptx.temp=(sensors.getTempCByIndex(0)*100); // read sensor 1
@@ -192,13 +191,14 @@ void loop() {
   if (numSensors>3) temptx.temp4=(sensors.getTempCByIndex(3)*100);
   digitalWrite(tempPower, LOW); // turn DS18B20 sensor off
 //  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power
-  digitalWrite(LEDpin,LOW);  //LED off
      
   if(usb==1) { Serial.print("Temperature:"); Serial.println(temptx.temp);}
   
+  digitalWrite(LEDpin,HIGH);   // LED on  
   power_adc_enable();
   temptx.supplyV = readVcc(); // Get supply voltage
   power_adc_disable();
+  digitalWrite(LEDpin,LOW);  //LED off
   
   if(usb==1) { Serial.print("SupplyV:"); Serial.println(temptx.supplyV);}
 
