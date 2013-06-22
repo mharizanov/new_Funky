@@ -118,13 +118,13 @@ void setup() {
 
   USBCON = USBCON | B00010000; 
 
-  delay(300);  // Wait at least between 150ms and 300ms (necessary); Slower host like Raspberry Pi needs more time
+  delay(550);  // Wait at least between 150ms and 550ms (necessary); Slower host like Raspberry Pi needs more time
  
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
       usb=0;
       powersave();
-      clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
+//      clock_prescale_set(clock_div_1);   //Run at 4Mhz so we can talk to the RFM12B over SPI
   }
   else {
       // USB is connected 
@@ -164,9 +164,6 @@ void setup() {
   rf12_sleep(0);                          // Put the RFM12 to sleep
 
   power_spi_disable();   
-
-  //if(!usb) { Sleepy::loseSomeTime(10000); }         // Allow some time for power source to recover    
-//------------------------------------------------------------------------------DD
   
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output
   digitalWrite(tempPower, HIGH); // turn sensor power on
@@ -175,35 +172,36 @@ void setup() {
   sensors.begin(); 
   numSensors=sensors.getDeviceCount(); 
   
-//-------------------------------------------------------------------------------DD
+  if(usb==1) { Serial.print("NumSensors:"); Serial.println(numSensors); }
+  
+  dodelay(1000);
 
 }
 
 void loop() {
-  digitalWrite(LEDpin,HIGH);   // LED on
     
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output  
   digitalWrite(tempPower, HIGH); // turn DS18B20 sensor on
-  dodelay(20);
+  dodelay(10);
+  digitalWrite(LEDpin,HIGH);   // LED on  
   sensors.requestTemperatures(); // Send the command to get temperatures  
- //---------------------------------------------------------------------------DD 
+
   temptx.temp=(sensors.getTempCByIndex(0)*100); // read sensor 1
   if (numSensors>1) temptx.temp2=(sensors.getTempCByIndex(1)*100); // read second sensor.. you may have multiple and count them upon startup but I only need two
   if (numSensors>2) temptx.temp3=(sensors.getTempCByIndex(2)*100); 
   if (numSensors>3) temptx.temp4=(sensors.getTempCByIndex(3)*100);
   digitalWrite(tempPower, LOW); // turn DS18B20 sensor off
-  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power
-//---------------------------------------------------------------------------DD 
-
-  digitalWrite(LEDpin,HIGH);  //LED off
-    
-
-//---------------------------------------------------------------------------DD 
- 
+//  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power
+  digitalWrite(LEDpin,LOW);  //LED off
+     
+  if(usb==1) { Serial.print("Temperature:"); Serial.println(temptx.temp);}
+  
   power_adc_enable();
   temptx.supplyV = readVcc(); // Get supply voltage
   power_adc_disable();
   
+  if(usb==1) { Serial.print("SupplyV:"); Serial.println(temptx.supplyV);}
+
   rfwrite(); // Send data via RF 
 
   for(int j = 0; j < 1; j++) {    // Sleep for j minutes
@@ -232,7 +230,8 @@ static void rfwrite(){
            while (!rf12_canSend())
               rf12_recvDone();
            rf12_sendStart(RF12_HDR_ACK, &temptx, numSensors*2 + 2); 
-           rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
+           if (usb==0) rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
+             else rf12_sendWait(0); 
            byte acked = waitForAck();  // Wait for ACK
            rf12_sleep(0);              // Put RF module to sleep
            if (acked) {       
@@ -250,7 +249,8 @@ static void rfwrite(){
       while (!rf12_canSend())
         rf12_recvDone();
       rf12_sendStart(0, &temptx, numSensors*2 + 2); 
-      rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
+           if (usb==0) rf12_sendWait(2);           // Wait for RF to finish sending while in standby mode
+             else rf12_sendWait(0); 
       rf12_sleep(0);              // Put RF module to sleep 
       power_spi_disable();      
      }
@@ -275,17 +275,17 @@ static void rfwrite(){
  long readVcc() {
    long result;
    // Read 1.1V reference against Vcc
-   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+//   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(16);
+   dodelay(2);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-   if(usb==0) clock_prescale_set(clock_div_2);     
+//   if(usb==0) clock_prescale_set(clock_div_2);     
    return result;
 } 
 //########################################################################################################################
@@ -297,7 +297,7 @@ void powersave() {
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
   power_twi_disable();
-  power_timer0_disable();
+//  power_timer0_disable();  / /necessary for the DS18B20 library
   power_timer1_disable();
   power_timer3_disable();
   PRR1 |= (uint8_t)(1 << 4);  //PRTIM4
