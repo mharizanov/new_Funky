@@ -78,7 +78,7 @@ void setup() {
 
   USBCON = USBCON | B00010000; 
 
-  delay(300);  // Wait at least between 150ms and 300ms (necessary); Slower host like Raspberry Pi needs more time
+  delay(550);  // Wait at least between 150ms and 300ms (necessary); Slower host like Raspberry Pi needs more time
  
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
