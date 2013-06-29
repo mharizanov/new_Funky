@@ -182,7 +182,7 @@ void loop() {
     
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output  
   digitalWrite(tempPower, HIGH); // turn DS18B20 sensor on
-  dodelay(10);
+  dodelay(20);
   sensors.requestTemperatures(); // Send the command to get temperatures  
 
   temptx.temp=(sensors.getTempCByIndex(0)*100); // read sensor 1
