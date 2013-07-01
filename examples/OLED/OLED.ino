@@ -1,9 +1,10 @@
 /*
- *This demo code will show you all functions for
- *Digole Graphic LCD adapter
+ 
+ http://harizanov.com/2013/06/miniature-oled-status-display-with-funky-v2/
+ 
  */
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(6, 8); // RX, TX
+SoftwareSerial mySerial(6, 8); // RX, TX, RX is set to some dummy pin
 
 #include <JeeLib.h>
 
@@ -17,6 +18,8 @@ RTC_Millis RTC;
 #define MYNODE 2             // Should be unique on network, node ID 30 reserved for base station
 #define freq RF12_868MHZ     // frequency - match to same frequency as RFM12B module (change to 868Mhz or 915Mhz if appropriate)
 #define group 210            // network group, must be same as emonTx and emonBase
+
+#define ledpin 1
 
 //---------------------------------------------------
 // Data structures for transfering data between units
@@ -72,10 +75,14 @@ const char *fontdir[] = {"0\xb0", "90\xb0", "180\xb0", "270\xb0"};
 
 void setup() {
 
-    mydisp.begin();
+    pinMode(ledpin,OUTPUT);
+    digitalWrite(ledpin,HIGH);
     
+    mydisp.begin();
+        
     pinMode(A5,OUTPUT);
-    digitalWrite(A5,LOW);
+    digitalWrite(A5,LOW); //Start RFM12b
+    
     delay(3000);
     
     /*----------for text LCD adapter and graphic LCD adapter ------------*/
@@ -84,6 +91,9 @@ void setup() {
     
     
     rf12_initialize(MYNODE, freq,group);
+    digitalWrite(ledpin,LOW);
+    
+    
     
 }
 
@@ -93,14 +103,16 @@ void loop() {
   {
     if (rf12_crc == 0 && (rf12_hdr & RF12_HDR_CTL) == 0)  // and no rf errors
     {
+      digitalWrite(ledpin,HIGH); //Blink LED to indicate packet received
+      
       byte node_id = (rf12_hdr & 0x1F);
       if (node_id == 10) {emontx = *(PayloadTX*) rf12_data; last_emontx = millis();}
-      if (node_id == 20) {emonfunky = *(PayloadFunky*) rf12_data; last_emontx = millis();
-    
-      otemp = (double)emonfunky.temperature / 100;
-      humi = (double)emonfunky.humidity / 100;
-
-}
+      if (node_id == 20) {
+        emonfunky = *(PayloadFunky*) rf12_data; last_emontx = millis();
+        otemp = (double)emonfunky.temperature / 100;
+        humi = (double)emonfunky.humidity / 100;
+      }
+      
       if (node_id == 7) {emonsolar = *(PayloadSolar*) rf12_data; last_emontx = millis();     stemp = (double)emonsolar.temperature / 100; }
 
       
@@ -113,6 +125,8 @@ void loop() {
       
       } 
     }
+    delay(10);  //Make LED blink more visible
+    digitalWrite(ledpin,LOW);
   }
 
 
@@ -134,24 +148,25 @@ void loop() {
 }
 
 void draw1(){
-    mydisp.setFont(120);    
-    resetpos(0);        
-    mydisp.print(" "); if(hour<10){mydisp.print(" ");} mydisp.print(hour);     mydisp.print(":");   if(minute<10){mydisp.print("0");} mydisp.println(minute);
+    mydisp.setFont(51);    
+    resetpos(0);         
+     //mydisp.setTextPosAbs(2, 27);
+     
+    if(hour<10){mydisp.print(" ");} mydisp.print(hour);     mydisp.print(":");   if(minute<10){mydisp.print("0");} mydisp.println(minute); mydisp.println(" ");
     mydisp.setFont(10);    
     resetpos(4);    
-    mydisp.print(" Power: ");     mydisp.print(emontx.power1);   mydisp.print("W (");    mydisp.print((int)usekwh); mydisp.print("kWh)"); 
+    mydisp.print("Power: ");     mydisp.print(emontx.power1);   mydisp.print("W (");    mydisp.print((int)usekwh); mydisp.print("kWh) "); 
     resetpos(5);    
-    mydisp.print(" Solar: ");     mydisp.print(stemp);   mydisp.print("C");    
+    mydisp.print("Solar: ");     mydisp.print(stemp);   mydisp.print("C ");    
     resetpos(6);    
-    mydisp.print(" Out: ");     mydisp.print(otemp);   mydisp.print("C Humi:"); mydisp.print((int)humi);   mydisp.print("%");    
+    mydisp.print("Out: ");     mydisp.print(otemp);   mydisp.print("C Humi:"); mydisp.print((int)humi);   mydisp.print("% ");    
 
-    
 //    mydisp.drawFrame(0, 0, 127, 64);
 }
 
 void resetpos(int pos) 
 {
-    mydisp.setPrintPos(0, pos, _TEXT_);
+    mydisp.setPrintPos(1, pos, _TEXT_);
 
 }
 
