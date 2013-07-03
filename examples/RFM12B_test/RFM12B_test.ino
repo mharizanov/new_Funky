@@ -78,18 +78,18 @@ void setup() {
 
   USBCON = USBCON | B00010000; 
 
-  delay(550);  // Wait at least between 150ms and 300ms (necessary); Slower host like Raspberry Pi needs more time
+  delay(1000);  // Wait at least between 150ms and 1000ms (necessary); Slower host like Raspberry Pi needs more time
  
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
       usb=0;
       powersave();
-      clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
+    //  clock_prescale_set(clock_div_2);   //Run at 4Mhz so we can talk to the RFM12B over SPI
   }
   else {
       // USB is connected 
       usb=1;
-      clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
+      //clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
       for(int i=0;i<10;i++){
           digitalWrite(LEDpin,LOW); 
           delay(50);
@@ -134,7 +134,8 @@ void loop() {
   
   digitalWrite(LEDpin,HIGH);  
   power_adc_enable();
-  temptx.supplyV = readVcc(); // Get supply voltage
+  readVcc(); // discard first reading
+  temptx.supplyV = readVcc(); // Get supply voltage  
   power_adc_disable();
   digitalWrite(LEDpin,LOW);  
   
@@ -206,17 +207,17 @@ static void rfwrite(){
  long readVcc() {
    long result;
    // Read 1.1V reference against Vcc
-   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+//   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(16);
+   Sleepy::loseSomeTime(2);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-   if(usb==0) clock_prescale_set(clock_div_2);     
+  // if(usb==0) clock_prescale_set(clock_div_2);     
    return result;
 } 
 //########################################################################################################################
