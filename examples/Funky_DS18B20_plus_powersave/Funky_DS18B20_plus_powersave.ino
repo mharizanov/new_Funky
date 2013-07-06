@@ -32,8 +32,9 @@
 
 #include <OneWire.h>   // http://www.pjrc.com/teensy/arduino_libraries/OneWire.zip
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
-#define TEMPERATURE_PRECISION 9
- 
+#define TEMPERATURE_PRECISION 11
+#define ASYNC_DELAY 375 // 9bit requres 95ms, 10bit 187ms, 11bit 375ms and 12bit resolution takes 750ms
+
 #define ONE_WIRE_BUS 8  // pad 5 of the Funky2
 #define tempPower 2     // Power pin is connected pad 6 on the Funky2
 
@@ -44,6 +45,10 @@ OneWire oneWire(ONE_WIRE_BUS);
  
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
+
+//addresses of sensors, MAX 4!!
+byte allAddress [4][8];  // 8 bytes per address
+
 //--------------------------------------------------------------------------------------
 
 #include <avr/power.h>
@@ -52,7 +57,7 @@ DallasTemperature sensors(&oneWire);
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
-#define LEDpin 1
+#define LEDpin 13
 
 #define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
 #define RETRY_LIMIT 5     // Maximum number of times to retry
@@ -108,8 +113,8 @@ static byte usb;  // Are we powered via the USB? If so, do not disable it
 void setup() {   
   // Because of the fuses, we are running @ 1Mhz now.  
 
-  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
-  digitalWrite(A5,LOW); //Start the RFM12B
+  pinMode(4,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(4,LOW); //Start the RFM12B
     
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
@@ -141,10 +146,10 @@ void setup() {
       showString(PSTR("\n[Funky v2]\n"));   
       showHelp();
 
-      // Wait for configuration for 30 seconds, then timeout and start the sketch
+      // Wait for configuration for 10 seconds, then timeout and start the sketch
       unsigned long start=millis();
     
-      while((millis()-start)<30000) {
+      while((millis()-start)<10000) {
       if (Serial.available())
         {
           handleInput(Serial.read());
@@ -170,10 +175,31 @@ void setup() {
   dodelay(50); // Allow 50ms for the sensor to be ready
   // Start up the library
   sensors.begin(); 
+  sensors.setWaitForConversion(false);   
   numSensors=sensors.getDeviceCount(); 
+ 
+  byte j=0;                                        // search for one wire devices and
+                                                   // copy to device address arrays.
+  while ((j < numSensors) && (oneWire.search(allAddress[j]))) {        
+    j++;
+    
+    //pretty much useless now since we power the DS18b20 on and off via a digital pin, and the power on default is 12bit
+    sensors.setResolution(allAddress[j], TEMPERATURE_PRECISION);      // and set the a to d conversion resolution of each.
+  }
+    
+    
+  if(usb==1) { 
+    Serial.print("NumSensors:"); Serial.println(numSensors); 
+
+  for (byte i=0; i < numSensors; i++) {
+    Serial.print("Device ");
+    Serial.print(i);  
+    Serial.print(": ");                          
+    printAddress(allAddress[i]);                  // print address from each device address arry.
+  }
   
-  if(usb==1) { Serial.print("NumSensors:"); Serial.println(numSensors); }
-  
+
+}  
   dodelay(1000);
 
 }
@@ -183,16 +209,22 @@ void loop() {
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output  
   digitalWrite(tempPower, HIGH); // turn DS18B20 sensor on
   dodelay(20);
-  sensors.requestTemperatures(); // Send the command to get temperatures  
 
-  temptx.temp=(sensors.getTempCByIndex(0)*100); // read sensor 1
-  if (numSensors>1) temptx.temp2=(sensors.getTempCByIndex(1)*100); // read second sensor.. you may have multiple and count them upon startup but I only need two
-  if (numSensors>2) temptx.temp3=(sensors.getTempCByIndex(2)*100); 
-  if (numSensors>3) temptx.temp4=(sensors.getTempCByIndex(3)*100);
+  for(int j=0;j<numSensors;j++) {
+    sensors.setResolution(allAddress[j], TEMPERATURE_PRECISION);      // and set the a to d conversion resolution of each.
+  }
+    
+  sensors.requestTemperatures(); // Send the command to get temperatures  
+  dodelay(ASYNC_DELAY); //Must wait for conversion, since we use ASYNC mode
+  
+                     temptx.temp=(sensors.getTempC(allAddress[0])*100);   if(usb==1) { Serial.print("Temperature 1:"); Serial.println(temptx.temp);}
+  if (numSensors>1) { temptx.temp2=(sensors.getTempC(allAddress[1])*100);   if(usb==1) { Serial.print("Temperature 2:"); Serial.println(temptx.temp2);} }
+  if (numSensors>2) { temptx.temp3=(sensors.getTempC(allAddress[2])*100);   if(usb==1) { Serial.print("Temperature 3:"); Serial.println(temptx.temp3);} }
+  if (numSensors>3) { temptx.temp4=(sensors.getTempC(allAddress[3])*100);   if(usb==1) { Serial.print("Temperature 4:"); Serial.println(temptx.temp4);} }
   digitalWrite(tempPower, LOW); // turn DS18B20 sensor off
-//  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power
+  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power
      
-  if(usb==1) { Serial.print("Temperature:"); Serial.println(temptx.temp);}
+
   
   digitalWrite(LEDpin,HIGH);   // LED on  
   power_adc_enable();
@@ -457,3 +489,17 @@ static void showHelp() {
 }
 
 
+void printAddress(DeviceAddress addr) {
+  byte i;
+  for( i=0; i < 8; i++) {                         // prefix the printout with 0x
+      Serial.print("0x");
+      if (addr[i] < 16) {
+        Serial.print('0');                        // add a leading '0' if required.
+      }
+      Serial.print(addr[i], HEX);                 // print the actual value in HEX
+      if (i < 7) {
+        Serial.print(", ");
+      }
+    }
+  Serial.print("\r\n");
+}
