@@ -56,6 +56,7 @@ unsigned long last_emontx;                   // Used to count time from last emo
 unsigned long last_emonbase;                   // Used to count time from last emontx update
 unsigned long fast_update;
 
+//http://www.digole.com/images/file/Tech_Data/Digole_Serial_Display_Adapter-Manual.pdf
 #define _Digole_Serial_UART_  //To tell compiler compile the special communication only, 
 //other available is: _Digole_Serial_I2C_ and _Digole_Serial_SPI_
 #include "DigoleSerial.h"
@@ -68,10 +69,47 @@ DigoleSerialDisp mydisp(&mySerial, 9600); //UART:Arduino UNO: Pin 1(TX)on arduin
 //DigoleSerialDisp mydisp(8,9,10);  //SPI:Pin 8: data, 9:clock, 10: SS, you can assign 255 to SS, and hard ground SS pin on module
 #define LCDCol 16
 #define LCDRow 2
-#define LCDW 240
+#define LCDW 128
 
 const unsigned char fonts[] = {6, 10, 18, 51, 120, 123};
 const char *fontdir[] = {"0\xb0", "90\xb0", "180\xb0", "270\xb0"};
+
+//icon converter http://www.digole.com/tools/PicturetoC_Hex_converter.php
+prog_uchar tempimage[] PROGMEM = {
+0x0f,0x0f
+,0x1f,0x8f
+,0x39,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x30,0xcf
+,0x70,0xef
+,0xe0,0x7f
+,0xc0,0x3f
+,0xc0,0x3f
+,0xc0,0x3f
+,0xc0,0x3f
+,0xe0,0x7f
+,0x70,0xef
+,0x3f,0xcf
+,0x1f,0x8f
+};
+
 
 void setup() {
 
@@ -92,9 +130,7 @@ void setup() {
     
     rf12_initialize(MYNODE, freq,group);
     digitalWrite(ledpin,LOW);
-    
-    
-    
+       
 }
 
 void loop() {
@@ -130,6 +166,8 @@ void loop() {
   }
 
 
+ 
+   
  //--------------------------------------------------------------------------------------------
   // Display update every 5000ms
   //--------------------------------------------------------------------------------------------
@@ -138,7 +176,7 @@ void loop() {
     fast_update = millis();
     
     DateTime now = RTC.now();
-    int last_hour = hour;
+    
     hour = now.hour();
     minute = now.minute();
 
@@ -148,25 +186,53 @@ void loop() {
 }
 
 void draw1(){
-    mydisp.setFont(51);    
+  
+    mydisp.setFont(120);    
     resetpos(0);         
-     //mydisp.setTextPosAbs(2, 27);
-     
-    if(hour<10){mydisp.print(" ");} mydisp.print(hour);     mydisp.print(":");   if(minute<10){mydisp.print("0");} mydisp.println(minute); mydisp.println(" ");
+ //   mydisp.setTextPosAbs(0,31);
+    if(hour<10){  // blank instead of leading digit
+         mydisp.print(" ");
+  //       mydisp.setTextPosAbs(30, 34);
+     }; 
+     mydisp.print(hour);     
+     mydisp.print(":");   
+
+//     mydisp.setTextPosAbs(64, 34); 
+     if(minute<10) mydisp.print("0"); mydisp.print(minute); mydisp.print(" ");
+ 
+   // The largest font only supports letters, no semicolumn, so we have to draw one
+//    mydisp.drawCircle(60, 15, 2, 1);    
+//    mydisp.drawCircle(60, 25, 2, 1);        
+  
     mydisp.setFont(10);    
     resetpos(4);    
-    mydisp.print("Power: ");     mydisp.print(emontx.power1);   mydisp.print("W (");    mydisp.print((int)usekwh); mydisp.print("kWh) "); 
+    mydisp.print("Power: ");     mydisp.print(emontx.power1);   mydisp.print("W ");   // mydisp.print((int)usekwh); mydisp.print("kWh) "); 
     resetpos(5);    
     mydisp.print("Solar: ");     mydisp.print(stemp);   mydisp.print("C ");    
     resetpos(6);    
     mydisp.print("Out: ");     mydisp.print(otemp);   mydisp.print("C Humi:"); mydisp.print((int)humi);   mydisp.print("% ");    
 
+    mydisp.drawBitmap(115, 0, 12, 32, tempimage);
+  
+    
+    
+    if(stemp>30) { //if solat remperature is greater than 30
+
+    // fill in the thermometer base      
+    mydisp.drawCircle(120, 26, 2, 1);    
+    mydisp.drawCircle(121, 26, 2, 1);        
+    
+    //calculate the lenght of the mercury bar, solar should range from 30 to 95 degrees, we scale that to 0-20 pixels bar
+    int barlen=map(stemp,30,95,0,20);
+    mydisp.drawBox(120,23-barlen,1,barlen);
+        
 //    mydisp.drawFrame(0, 0, 127, 64);
+    }
 }
 
 void resetpos(int pos) 
 {
-    mydisp.setPrintPos(1, pos, _TEXT_);
+    mydisp.setPrintPos(0, pos, _TEXT_);
 
 }
 

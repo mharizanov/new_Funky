@@ -101,10 +101,10 @@ void setup() {
       showString(PSTR("\n[Funky v2]\n"));   
       showHelp();
 
-      // Wait for configuration for 30 seconds, then timeout and start the sketch
+      // Wait for configuration for 10 seconds, then timeout and start the sketch
       unsigned long start=millis();
     
-      while((millis()-start)<30000) {
+      while((millis()-start)<10000) {
       if (Serial.available())
         {
           handleInput(Serial.read());
