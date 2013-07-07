@@ -1,30 +1,7 @@
-
-
-//--------------------------------------------------------------------------------------
-// Funky Wireless Temperature Sensor Node
-// http://harizanov.com/2012/10/funky-as-remote-temperature-sensing-node-with-ds18b20/
-// To use with DS18B20, a 4K7 resistor is needed between pads 5 and 6 of the Funkyv2 (DQ and Vdd)
-// Martin Harizanov http://harizanov.com
-// GNU GPL V3
 //--------------------------------------------------------------------------------------
 // Ultra low power test for the Funkyv2; 
 // harizanov.com
 // GNU GPL V3
-//--------------------------------------------------------------------------------------
-
- /* 
-   I run this sketch with the following Atmega32u4 fuses
-   low_fuses=0x7f
-   high_fuses=0xd8
-   extended_fuses=0xcd
-   meaning:
-   external crystal 8Mhz, start-up 16K CK+65ms; 
-   Divide clock by 8 internally; [CKDIV8=0]  (We will start at 1Mhz since BOD level is 2.2V)
-   Boot Reset vector Enabled (default address=$0000); [BOOTRST=0]
-   Boot flsh size=2048K words
-   Serial program downloading (SPI) enabled; [SPIEN=0]
-   BOD=2.2V
-*/
 //--------------------------------------------------------------------------------------
 
 #include <JeeLib.h> // https://github.com/jcw/jeelib
