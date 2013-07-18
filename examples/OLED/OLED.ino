@@ -39,7 +39,7 @@ PayloadFunky emonfunky;
 typedef struct { int temperature, batt, dummy; } PayloadSolar;
 PayloadSolar emonsolar;
 
-int hour = 0, minute = 0;
+int hour = 0, minute = 0, second=0;
 double usekwh = 0;
 double otemp = 0, humi = 0, stemp=0;
 double minotemp, maxotemp, minhumi, maxhumi, batt;
@@ -48,6 +48,7 @@ double minotemp, maxotemp, minhumi, maxhumi, batt;
 //byte page = 1;
 
 
+int tvx,tvy,tvradius,x2,y2,x3,y3;
 
 //-------------------------------------------------------------------------------------------- 
 // Flow control
@@ -69,7 +70,8 @@ DigoleSerialDisp mydisp(&mySerial, 9600); //UART:Arduino UNO: Pin 1(TX)on arduin
 //DigoleSerialDisp mydisp(8,9,10);  //SPI:Pin 8: data, 9:clock, 10: SS, you can assign 255 to SS, and hard ground SS pin on module
 #define LCDCol 16
 #define LCDRow 2
-#define LCDW 128
+#define LCDW 127
+#define LCDH 63
 
 const unsigned char fonts[] = {6, 10, 18, 51, 120, 123};
 const char *fontdir[] = {"0\xb0", "90\xb0", "180\xb0", "270\xb0"};
@@ -118,6 +120,11 @@ void setup() {
     
     mydisp.begin();
         
+    tvx=LCDW/2;
+    tvy=LCDH/2;
+    tvradius=LCDH/2 ;
+
+
     pinMode(A5,OUTPUT);
     digitalWrite(A5,LOW); //Start RFM12b
     
@@ -169,9 +176,9 @@ void loop() {
  
    
  //--------------------------------------------------------------------------------------------
-  // Display update every 5000ms
+  // Display update every 1000ms
   //--------------------------------------------------------------------------------------------
-  if ((millis()-fast_update)>5000)
+  if ((millis()-fast_update)>1000)
   {
     fast_update = millis();
     
@@ -179,11 +186,36 @@ void loop() {
     
     hour = now.hour();
     minute = now.minute();
+    second = now.second();
 
-    usekwh += (emontx.power1 * 5) / 3600000;
-    draw1();
+    usekwh += (emontx.power1 * 1) / 3600000;
+ 
+ 
+    draw1();  // Change to draw2 for analog clock
+ 
+ 
   }
 }
+
+void draw2()
+{
+  drawface();
+  drawtime();
+  drawtemp();
+
+  mydisp.setFont(10);    
+  resetpos(0);         
+
+  if(hour<10){  // blank instead of leading digit
+       mydisp.print(" ");
+     }; 
+   mydisp.print(hour);     
+   mydisp.print(":");   
+
+   if(minute<10) mydisp.print("0"); mydisp.print(minute); mydisp.print(" ");
+     
+}
+
 
 void draw1(){
   
@@ -212,9 +244,68 @@ void draw1(){
     resetpos(6);    
     mydisp.print("Out: ");     mydisp.print(otemp);   mydisp.print("C Humi:"); mydisp.print((int)humi);   mydisp.print("% ");    
 
-    mydisp.drawBitmap(115, 0, 12, 32, tempimage);
-  
+    drawtemp();        
+//    mydisp.drawFrame(0, 0, 127, 64);
     
+}
+
+void resetpos(int pos) 
+{
+    mydisp.setPrintPos(0, pos, _TEXT_);
+
+}
+
+
+void drawtime()
+{
+ 
+mydisp.setColor(0);  
+mydisp.drawCircle(tvx,tvy,tvradius-5,1);
+mydisp.setColor(1);  
+
+float angle = second*6 ;
+angle=(angle/57.29577951) ; //Convert degrees to radians  
+x3=(tvx+(sin(angle)*(tvradius-6)));
+y3=(tvy-(cos(angle)*(tvradius-6)));
+mydisp.drawLine(tvx,tvy,x3,y3);
+
+angle = minute * 6 ;
+angle=(angle/57.29577951) ; //Convert degrees to radians  
+x3=(tvx+(sin(angle)*(tvradius-11)));
+y3=(tvy-(cos(angle)*(tvradius-11)));
+mydisp.drawLine(tvx,tvy,x3,y3);
+angle = hour * 30 + int((minute / 12) * 6 )   ;
+angle=(angle/57.29577951) ; //Convert degrees to radians  
+x3=(tvx+(sin(angle)*(tvradius-15)));
+y3=(tvy-(cos(angle)*(tvradius-15)));
+mydisp.drawLine(tvx,tvy,x3,y3);
+
+}
+
+
+void drawface() 
+{
+  
+//clock face  
+ mydisp.drawCircle(tvx,tvy,tvradius,0);
+//hour ticks
+for( int z=0; z < 360;z= z + 30 ){
+  //Begin at 0° and stop at 360°
+  float angle = z ;
+  angle=(angle/57.29577951) ; //Convert degrees to radians
+  x2=(tvx+(sin(angle)*tvradius));
+  y2=(tvy-(cos(angle)*tvradius));
+  x3=(tvx+(sin(angle)*(tvradius-4)));
+  y3=(tvy-(cos(angle)*(tvradius-4)));
+
+  mydisp.drawLine(x2,y2,x3,y3);
+  
+}
+}
+
+void drawtemp()
+{
+    mydisp.drawBitmap(115, 0, 12, 32, tempimage);
     
     if(stemp>30) { //if solat remperature is greater than 30
 
@@ -225,14 +316,6 @@ void draw1(){
     //calculate the lenght of the mercury bar, solar should range from 30 to 95 degrees, we scale that to 0-20 pixels bar
     int barlen=map(stemp,30,95,0,20);
     mydisp.drawBox(120,23-barlen,1,barlen);
-        
-//    mydisp.drawFrame(0, 0, 127, 64);
-    }
-}
-
-void resetpos(int pos) 
-{
-    mydisp.setPrintPos(0, pos, _TEXT_);
-
+    }  
 }
 
