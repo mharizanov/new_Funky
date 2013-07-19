@@ -34,7 +34,7 @@ byte allAddress [4][8];  // 8 bytes per address
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
-#define LEDpin 13
+#define LEDpin 1
 
 #define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
 #define RETRY_LIMIT 5     // Maximum number of times to retry
