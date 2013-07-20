@@ -206,6 +206,7 @@ void loop() {
   digitalWrite(LEDpin,HIGH);   // LED on  
   power_adc_enable();
   temptx.supplyV = readVcc(); // Get supply voltage
+  temptx.supplyV = readVcc(); // Twice.. ignore first reading
   power_adc_disable();
   digitalWrite(LEDpin,LOW);  //LED off
   
