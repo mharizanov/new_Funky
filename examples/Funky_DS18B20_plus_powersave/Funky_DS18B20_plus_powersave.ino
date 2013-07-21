@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// Ultra low power test for the Funkyv2; 
+// Measure temperature usin DS18B20 sensor(s) attached to Funky v2
 // harizanov.com
 // GNU GPL V3
 //--------------------------------------------------------------------------------------
@@ -9,12 +9,11 @@
 
 #include <OneWire.h>   // http://www.pjrc.com/teensy/arduino_libraries/OneWire.zip
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
-#define TEMPERATURE_PRECISION 11
+#define TEMPERATURE_PRECISION 11 //Max 12 bit, min 9 bit
 #define ASYNC_DELAY 375 // 9bit requres 95ms, 10bit 187ms, 11bit 375ms and 12bit resolution takes 750ms
 
-#define ONE_WIRE_BUS 8  // pad 5 of the Funky2
-#define tempPower 2     // Power pin is connected pad 6 on the Funky2
-
+#define ONE_WIRE_BUS 8  // The data pin, digital 8
+#define tempPower 2     // Power up/down the DS18B20 sensor with this pin to save power
 
 // Setup a oneWire instance to communicate with any OneWire devices 
 // (not just Maxim/Dallas temperature ICs)
@@ -23,7 +22,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-//addresses of sensors, MAX 4!!
+//addresses of sensors, MAX 4!!  
 byte allAddress [4][8];  // 8 bytes per address
 
 //--------------------------------------------------------------------------------------
@@ -46,20 +45,19 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Slee
 
 // ID of the settings block
 #define CONFIG_VERSION "mjh" //keep this 3 chars long
-#define CONFIG_START 32
+#define CONFIG_START 32    // Offset of the configuration in EEPROM
 
 struct StoreStruct {
   // This is for mere detection if they are your settings
-  char version[4];
+  char version[4];  //3+trailing zero
   byte freq, network, myNodeID, ACK, sendp;
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_868MHZ, 210, 27, false, 5
+  RF12_868MHZ, 210, 27, false, 60
 };
 
 static byte value, stack[20], top;
-
 
 static byte usb;  // Are we powered via the USB? If so, do not disable it
 
@@ -106,8 +104,8 @@ void setup() {
       // USB Disconnected; We are running on battery so we must save power
       usb=0;
       powersave();
+      Sleepy::loseSomeTime(32);
 //      clock_prescale_set(clock_div_1);   //Run at 4Mhz so we can talk to the RFM12B over SPI
-      dodelay(100);    // Wait for the RFM12B module to start up
   }
   else {
       // USB is connected 
@@ -175,7 +173,6 @@ void setup() {
     Serial.print(": ");                          
     printAddress(allAddress[i]);                  // print address from each device address arry.
   }
-  
 
 }  
   dodelay(1000);
@@ -195,14 +192,12 @@ void loop() {
   sensors.requestTemperatures(); // Send the command to get temperatures  
   dodelay(ASYNC_DELAY); //Must wait for conversion, since we use ASYNC mode
   
-                     temptx.temp=(sensors.getTempC(allAddress[0])*100);   if(usb==1) { Serial.print("Temperature 1:"); Serial.println(temptx.temp);}
+                      temptx.temp=(sensors.getTempC(allAddress[0])*100);   if(usb==1) { Serial.print("Temperature 1:"); Serial.println(temptx.temp);}
   if (numSensors>1) { temptx.temp2=(sensors.getTempC(allAddress[1])*100);   if(usb==1) { Serial.print("Temperature 2:"); Serial.println(temptx.temp2);} }
   if (numSensors>2) { temptx.temp3=(sensors.getTempC(allAddress[2])*100);   if(usb==1) { Serial.print("Temperature 3:"); Serial.println(temptx.temp3);} }
   if (numSensors>3) { temptx.temp4=(sensors.getTempC(allAddress[3])*100);   if(usb==1) { Serial.print("Temperature 4:"); Serial.println(temptx.temp4);} }
   digitalWrite(tempPower, LOW); // turn DS18B20 sensor off
-  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power
-     
-
+  pinMode(tempPower, INPUT); // set power pin for DS18B20 to input before sleeping, saves power    
   
   digitalWrite(LEDpin,HIGH);   // LED on  
   power_adc_enable();
@@ -215,9 +210,10 @@ void loop() {
 
   rfwrite(); // Send data via RF 
 
-  for(int j = 0; j < 1; j++) {    // Sleep for j minutes
-    dodelay(storage.sendp*1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+  for(int j = 0; j < storage.sendp; j++) {    // Sleep for j seconds
+    dodelay(1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
   }
+  
 }
 
 
