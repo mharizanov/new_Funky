@@ -88,25 +88,26 @@ static byte usb;  // Are we powered via the USB? If so, do not disable it
 //########################################################################################################################
 
 void setup() {   
-  // Because of the fuses, we are running @ 1Mhz now.  
-
-  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
-  digitalWrite(A5,LOW); //Start the RFM12B
     
-  pinMode(LEDpin,OUTPUT);
-  digitalWrite(LEDpin,HIGH); 
-
-  loadConfig();
-
+  //Detect if we are powered via the USB or battery; If we are powered via the USB, we don't need to be fancy about power saving and shall not disable the USB interface but rather allow configuration menu over serial
   USBCON = USBCON | B00010000; 
 
   delay(550);  // Wait at least between 150ms and 550ms (necessary); Slower host like Raspberry Pi needs more time
- 
+
+  pinMode(LEDpin,OUTPUT);
+  digitalWrite(LEDpin,HIGH); 
+
+  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(A5,LOW); //Start the RFM12B
+  
+  loadConfig();
+   
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
       usb=0;
       powersave();
 //      clock_prescale_set(clock_div_1);   //Run at 4Mhz so we can talk to the RFM12B over SPI
+      dodelay(100);    // Wait for the RFM12B module to start up
   }
   else {
       // USB is connected 
@@ -114,9 +115,9 @@ void setup() {
       clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
       for(int i=0;i<10;i++){
           digitalWrite(LEDpin,LOW); 
-          delay(50);
+          delay(40);
           digitalWrite(LEDpin,HIGH); 
-          delay(50);
+          delay(40);
       }
 
       Serial.begin(57600);  // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope don't wonder where is Serial.begin
