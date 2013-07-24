@@ -1,34 +1,19 @@
-//————————————————————————————–
-// Ultra low power test for the Funkyv2; Sends an incrementing value and the VCC readout every 10 seconds
+//â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€“
 // harizanov.com
 // GNU GPL V3
-//————————————————————————————–
-
-/*
-I run this sketch with the following Atmega32u4 fuses
-low_fuses=0x7f
-high_fuses=0xd8
-extended_fuses=0xcd
-meaning:
-external crystal 8Mhz, start-up 16K CK+65ms;
-Divide clock by 8 internally; [CKDIV8=0] (We will start at 1Mhz since BOD level is 2.2V)
-Boot Reset vector Enabled (default address=$0000); [BOOTRST=0]
-Boot flsh size=2048K words
-Serial program downloading (SPI) enabled; [SPIEN=0]
-BOD=2.2V
-*/
+//â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€“
 
 #include <avr/power.h>
 #include <avr/sleep.h>
 
 #include <JeeLib.h> // https://github.com/jcw/jeelib
-#include “pins_arduino.h”
+#include "pins_arduino.h"
 
 //#define DEBUG //uncomment to enable serial output
 
 #define LEDpin 1
 
-#define RETRY_PERIOD 1 // How soon to retry (in seconds) if ACK didn’t come in
+#define RETRY_PERIOD 1 // How soon to retry (in seconds) if ACK didnâ€™t come in
 #define RETRY_LIMIT 5 // Maximum number of times to retry
 #define ACK_TIME 15 // Number of milliseconds to wait for an ack
 
@@ -36,7 +21,7 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Slee
 
 #include <EEPROM.h>
 
-#define freq RF12_868MHZ // Frequency of RF12B module can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. You should use the one matching the module you have.433MHZ, RF12_868MHZ or RF12_915MHZ. You should use the one matching the module you have.
+#define freq RF12_433MHZ // Frequency of RF12B module can be RF12_433MHZ, RF12_868MHZ or RF12_915MHZ. You should use the one matching the module you have.433MHZ, RF12_868MHZ or RF12_915MHZ. You should use the one matching the module you have.
 const int myNodeID = 1; // emonTx RFM12B node ID
 const int network = 210;
 #define ACK false
@@ -59,7 +44,7 @@ unsigned long pulseTime,lastTime; // Used to measure power.
 int ppl = 2; // 2 pulses per litre
 int secs_delay = 15; // seconds to delay between RX transmissions
 
-int inputPin = 2; // choose the input pin – 3 for Jeenode, 2 for Funky
+int inputPin = 2; // choose the input pin â€“ 3 for Jeenode, 2 for Funky
 
 long lastDebounce = 0;
 long debounceDelay = 500; // Ignore bounces under 0.5 second
@@ -98,13 +83,13 @@ digitalWrite(LEDpin,HIGH);
 delay(50);
 }
 
-Serial.begin(57600); // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope don’t wonder where is Serial.begin
-showString(PSTR(“\n[Funky v2]\n”));
+Serial.begin(57600); // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope donâ€™t wonder where is Serial.begin
+showString(PSTR("[Funky v2]\r\n"));
 
 // Wait for configuration for 30 seconds, then timeout and start the sketch
 unsigned long start=millis();
 
-showString(PSTR(“\nStarting sketch..”));
+showString(PSTR("Starting sketch.."));
 Serial.flush();
 }
 
@@ -122,7 +107,7 @@ power_spi_disable();
 pinMode(inputPin, INPUT);
 //Set internal pull-up resistor to on
 digitalWrite(inputPin,HIGH);
-attachInterrupt(1, onPulse, FALLING); // KWH interrupt attached to IRQ 1 = pin3 – hardwired to emonTx pulse jackplug. For connections see: http://openenergymonitor.org/emon/node/208
+attachInterrupt(1, onPulse, FALLING); // KWH interrupt attached to IRQ 1 = pin3 â€“ hardwired to emonTx pulse jackplug. For connections see: http://openenergymonitor.org/emon/node/208
 
 }
 
@@ -165,9 +150,9 @@ delay(secs_delay*1000);
 
 }
 
-//————————————————————————————————–
+//â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€“
 // Send payload data via RF
-//————————————————————————————————–
+//â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€“
 static void rfwrite(){
 power_spi_enable();
 
@@ -217,7 +202,7 @@ power_adc_disable();
 power_usart0_disable();
 //power_spi_disable(); /do that a bit later, after we power RFM12b down
 power_twi_disable();
-//power_timer0_disable(); // We need timer0 for timekeeping
+power_timer0_disable();
 power_timer1_disable();
 power_timer3_disable();
 PRR1 |= (uint8_t)(1 << 4); //PRTIM4
@@ -265,27 +250,25 @@ power_usb_disable(); // Keep it here, after the USB power down
 }
 
 static void showString (PGM_P s) {
-for (;;) {
-char c = pgm_read_byte(s++);
-if (c == 0)
-break;
-if (c == ‘\n’)
-Serial.print(‘\r’);
-Serial.print(c);
-}
+  for (;;) {
+    char c = pgm_read_byte(s++);
+    if (c == 0)
+      break;
+    if (c == '\n')
+      Serial.print('\r');
+    Serial.print(c);
+  }
 }
 
-// The interrupt routine – runs each time a falling edge of a pulse is detected
+// The interrupt routine â€“ runs each time a falling edge of a pulse is detected
 void onPulse()
 {
-
-if( (millis() – lastDebounce) > debounceDelay){
-lastTime = pulseTime; //used to measure time between pulses.
-pulseTime = micros();
-pulseCount++; //pulseCounter
-emontx.flowrate = int(((60000000.0 / (pulseTime – lastTime))/ppl)*1000); //Calculate flow rate
-
-lastDebounce = millis();
-
+  if( (millis() - lastDebounce) > debounceDelay) {
+    lastTime = pulseTime; //used to measure time between pulses.
+    pulseTime = micros();
+    pulseCount++; //pulseCounter
+    emontx.flowrate = int(((60000000.0 / (pulseTime - lastTime))/ppl)*1000); //Calculate flow rate
+    lastDebounce = millis();
+  }
 }
-}
+
