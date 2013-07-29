@@ -60,16 +60,17 @@ void setup() {
     
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
-
-  loadConfig();
-
+  
   USBCON = USBCON | B00010000; 
-
-  delay(500);  // Wait at least between 150ms and 300ms (necessary); Slower host like Raspberry Pi needs more time
 
   pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
   digitalWrite(A5,LOW); //Start the RFM12B
- 
+
+  delay(500);  // Wait at least between 150ms and 500ms (necessary); Slower host like Raspberry Pi needs more time
+
+
+  loadConfig();
+
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
       usb=0;
@@ -220,17 +221,15 @@ static void rfwrite(){
  long readVcc() {
    long result;
    // Read 1.1V reference against Vcc
-   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(24);
+   Sleepy::loseSomeTime(2);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-   if(usb==0) clock_prescale_set(clock_div_1);     
    return result;
 } 
 //########################################################################################################################
@@ -247,7 +246,6 @@ void powersave() {
 //  power_timer3_disable();
   PRR1 |= (uint8_t)(1 << 4);  //PRTIM4
   power_usart1_disable();
-  
   
   // Switch to RC Clock 
   UDINT  &= ~(1 << SUSPI); // UDINT.SUSPI = 0; Usb_ack_suspend
