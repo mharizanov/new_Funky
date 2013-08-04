@@ -121,7 +121,16 @@ void setup() {
   rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
   // Adjust low battery voltage to 2.2V
   rf12_control(0xC000);
+  
+ /* 
+ // Transmission power experimenting, see http://harizanov.com/2013/07/reducing-rfm12b-transmission-power/
+ 
+ byte txPower=7;
+ rf12_control(0x9850 | (txPower > 7 ? 7 : txPower)); // !mp,90kHz,MAX OUT               //last byte=power level: 0=highest, 7=lowest
+ */
+  
   rf12_sleep(0);                          // Put the RFM12 to sleep
+
 
   power_spi_disable();   
 

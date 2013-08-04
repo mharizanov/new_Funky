@@ -202,12 +202,13 @@ void loop() {
   digitalWrite(LEDpin,HIGH);   // LED on  
   power_adc_enable();
   temptx.supplyV = readVcc(); // Get supply voltage
-  temptx.supplyV = readVcc(); // Twice.. ignore first reading
   power_adc_disable();
   digitalWrite(LEDpin,LOW);  //LED off
   
   if(usb==1) { Serial.print("SupplyV:"); Serial.println(temptx.supplyV);}
 
+  dodelay(1000); // wait a bit for the battery to settle
+  
   rfwrite(); // Send data via RF 
 
   for(int j = 0; j < storage.sendp; j++) {    // Sleep for j seconds
@@ -218,8 +219,17 @@ void loop() {
 
 
 void dodelay(unsigned int ms){
-    if(usb==0) 
+    if(usb==0) {
+      byte oldADCSRA=ADCSRA;
+      byte oldADCSRB=ADCSRB;
+      byte oldADMUX=ADMUX;
+      
       Sleepy::loseSomeTime(ms); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+      
+      ADCSRA=oldADCSRA; // restore ADC state
+      ADCSRB=oldADCSRB;
+      ADMUX=oldADMUX;
+    }
     else 
       delay(ms);    
 }
@@ -280,6 +290,10 @@ static void rfwrite(){
 // Read current supply voltage
 //--------------------------------------------------------------------------------------------------
  long readVcc() {
+  byte oldADMUX=ADMUX;  //Save ADC state
+  byte oldADCSRA=ADCSRA; 
+  byte oldADCSRB=ADCSRB;
+  
    long result;
    // Read 1.1V reference against Vcc
 //   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
@@ -293,6 +307,10 @@ static void rfwrite(){
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
 //   if(usb==0) clock_prescale_set(clock_div_2);     
+   
+   ADCSRA=oldADCSRA; // restore ADC state
+   ADCSRB=oldADCSRB;
+   ADMUX=oldADMUX;
    return result;
 } 
 //########################################################################################################################
