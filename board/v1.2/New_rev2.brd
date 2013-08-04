@@ -135,14 +135,13 @@
 <text x="12.462" y="20.134" size="1.016" layer="21">+3V3</text>
 <text x="16.505" y="21.402" size="1.016" layer="21">Ant.</text>
 <text x="18.688" y="16.896" size="0.8128" layer="21" font="vector">5V</text>
-<text x="18.048" y="14.4" size="0.8128" layer="21" font="vector">D13</text>
+<text x="17.92" y="13.632" size="0.8128" layer="21" font="vector">D13</text>
 <text x="17.792" y="11.648" size="0.8128" layer="21" font="vector">GND</text>
 <text x="17.6" y="8.704" size="0.8128" layer="21" font="vector">VCC</text>
 <text x="16.832" y="6.848" size="0.8128" layer="21" font="vector">D8/A8</text>
 <text x="18.56" y="4.16" size="0.8128" layer="21" font="vector">D2</text>
-<text x="16.832" y="0.768" size="0.6096" layer="21" font="vector">Step-up</text>
+<text x="16.192" y="1.024" size="0.6096" layer="21" font="vector">Step-up</text>
 <text x="6.592" y="5.184" size="0.8128" layer="21" font="vector" rot="R90">Funky v2</text>
-<text x="7.872" y="5.184" size="0.8128" layer="21" font="vector" rot="R90">http://harizanov.com</text>
 <polygon width="0.2032" layer="21">
 <vertex x="11.904" y="7.808"/>
 <vertex x="8.192" y="11.52"/>

@@ -33,7 +33,7 @@ class RGB {
 };
 
 #define NUM_COLORS 6
-#define MAX_TEMP 80.0
+#define MAX_TEMP 90.0
 #define MIN_TEMP 40.0
 
 RGB colors[NUM_COLORS] = {

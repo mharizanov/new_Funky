@@ -183,7 +183,7 @@ void loop() {
     
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output  
   digitalWrite(tempPower, HIGH); // turn DS18B20 sensor on
-  dodelay(20);
+  dodelay(50);  // My sensors work with a 20ms delay, but someone mentioned that he had problems with 20ms; increasing to 50ms just in case
 
   for(int j=0;j<numSensors;j++) {
     sensors.setResolution(allAddress[j], TEMPERATURE_PRECISION);      // and set the a to d conversion resolution of each.
@@ -285,7 +285,7 @@ static void rfwrite(){
 //   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   dodelay(2);
+   delay(2);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;

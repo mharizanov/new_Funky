@@ -19,10 +19,10 @@
  */
 
 #include <avr/wdt.h>
+#include <RF12sm.h>        // https://github.com/stevemarple/RF12
 
 #include <CircBuffer.h>  // https://github.com/stevemarple/CircBuffer
 #include <AsyncDelay.h>  // https://github.com/stevemarple/AsyncDelay
-#include <RF12.h>        // https://github.com/stevemarple/RF12
 #include <RF12_Stream.h>  //https://github.com/stevemarple/RF12_Stream
 
 #if defined(UBRRH) || defined(UBRR0H) || defined(USBCON)
