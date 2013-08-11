@@ -235,10 +235,13 @@ static void rfwrite(){
 void powersave() {
   ADCSRA =0;
   power_adc_disable();
+
+  ACSR |= (1 << ACD); // disable Analog comparator, saves 4 uA
+  
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
   power_twi_disable();
-  power_timer0_disable();
+  power_timer0_disable();  // Do not disable if you need millis()!!!
   power_timer1_disable();
   power_timer3_disable();
   PRR1 |= (uint8_t)(1 << 4);  //PRTIM4

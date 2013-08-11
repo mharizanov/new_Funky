@@ -2,15 +2,28 @@
 #include <avr/power.h>
 #include <avr/sleep.h>
 
+#include <JeeLib.h> // https://github.com/jcw/jeelib
+
 
 void setup(){
+
+  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(A5,LOW); //Start the RFM12B
+  
+  delay(150);
+  rf12_initialize(30,RF12_868MHZ,210); // Initialize RFM12 
+  // Adjust low battery voltage to 2.2V
+  rf12_control(0xC000);
+  rf12_sleep(0);                          // Put the RFM12 to sleep  
 
   pinMode(1,OUTPUT);
   digitalWrite(1,HIGH);
   delay(10000);
   digitalWrite(1,LOW);
 
-
+  ACSR |= (1 << ACD); // disable Analog comparator  //58.7 uA (from 62.5)
+  
+  
   ADCSRA =0;
   power_adc_disable();
   power_usart0_disable();
@@ -60,39 +73,16 @@ void setup(){
    UDCON |= (1 << DETACH); 
    
    power_usb_disable();  // Keep it here, after the USB power down
+   
+//   clock_prescale_set(clock_div_8);
 
-while(1){
-   SMCR  =(1<<SM1); //Power down
-   SMCR |=(1<<SE); //Enable sleep mode 
-   __asm__ __volatile__ ("sleep" "\n\t" :: ); 
-
-  
-}
 }
 void loop(){
-}
-
-
-/*
-
-  Serial.end(); // shut off USB
-  
-  while(1){
-  ADCSRA = 0;   // shut off ADC
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   noInterrupts();
   sleep_enable();
   interrupts();
   sleep_cpu();
   sleep_disable();
-  }
-  
-  
-  
-  
-  
-  
-     
 }
-*/
 
