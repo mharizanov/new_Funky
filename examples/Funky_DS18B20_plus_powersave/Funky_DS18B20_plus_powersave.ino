@@ -318,6 +318,7 @@ static void rfwrite(){
 
 void powersave() {
   ADCSRA =0;
+  ACSR |= (1 << ACD); // disable Analog comparator    
   power_adc_disable();
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
@@ -366,6 +367,8 @@ void powersave() {
    UDCON |= (1 << DETACH); 
    
    power_usb_disable();  // Keep it here, after the USB power down
+
+
 
 }
 
