@@ -31,6 +31,11 @@ static void OOKSend(unsigned long cmd) {
 void setup() {
     Serial.begin(9600);
     Serial.println("\n[OOK_RF sockets]");
+    
+    pinMode(A5,OUTPUT);  //Start RFM12b
+    digitalWrite(A5,LOW);
+    delay(100);
+
     rf12_initialize(0, RF12_433MHZ);
 }
  
