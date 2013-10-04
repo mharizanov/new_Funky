@@ -1,4 +1,4 @@
-
+// Maetin's smart hot water tank controler project, check it out here http://harizanov.com/2013/09/smart-iot-solar-hot-water-tank-controller/
 #include <OneWire.h>   // http://www.pjrc.com/teensy/arduino_libraries/OneWire.zip
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
 #define TEMPERATURE_PRECISION 9
@@ -12,8 +12,6 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-
-// Try out Ciseco's bistable relay http://shop.ciseco.co.uk/3v-to-5v-bistable-latching-relay-kit
 // Connect D8 to SET, D2 to RESET
 
 #define LED 1
@@ -42,7 +40,7 @@ DallasTemperature sensors(&oneWire);
 #define ACK_TIME 15       // Number of milliseconds to wait for an ack
 
 #define GATEWAYID 16  
-#define EMONCMS_CONTROL_FEEDID 17991; 
+#define EMONCMS_CONTROL_FEEDID 21367; 
 
 #include <RTClib.h>                 // Real time clock (RTC) - used for software RTC to reset kWh counters at midnight
 #include <Wire.h>                   // Part of Arduino libraries - needed for RTClib
@@ -81,10 +79,12 @@ typedef struct { byte magic, hour, mins, sec; } PayloadBase;			// new payload de
 PayloadBase emonbase; 
 
 int hour = 0, minute = 0, second=0;
-unsigned long last_emonbase, last_sent, last_gatequery;
+unsigned long last_emonbase, last_sent, last_gatequery, feed_update;
 
 typedef struct { byte node_id; unsigned int feed_id; float feed_val;} askStruct;			// new payload def for time data reception
 askStruct askpayload; 
+
+static int feed_val;
 
 
 void setup(){
@@ -146,6 +146,8 @@ void loop() {
            Serial.print(F("Node id:"));Serial.println(askpayload.node_id);         
            Serial.print(F("Feed id:"));Serial.println(askpayload.feed_id);
            Serial.print(F("Feed val:"));Serial.println(askpayload.feed_val);
+           feed_val=(int)askpayload.feed_val;
+           feed_update=millis();
          }
          
         } 
@@ -264,10 +266,46 @@ static void rfwrite(){
 
 
 void controlrelay() {
+
+Serial.println(millis()-feed_update);
+
+if(millis()-feed_update < 300000L) { //we heard back from emoncms max 5 min ago, so we can use the feed_val as control
+Serial.print(F("Feed_val:")); Serial.println(feed_val);
+
+ switch (feed_val) {
+    case 0:
+      //Off
+        if(relaystatus==1) resetrelay();
+        relaystatus=0;
+      break;
+    case 1:
+      //On
+        if(relaystatus==0) setrelay();
+        relaystatus=1;
+      break;
+    case 2:
+      //Auto mode
+       autorelay();
+      break;
+      
+    default: 
+        if(relaystatus==1) resetrelay();
+        relaystatus=0;
+  }
+
+} else { // we haven'y heard from emoncms recently, play it safe
+        if(relaystatus==1) resetrelay();
+        relaystatus=0;
+}
+
+}
+
+void autorelay() {
   
-  if(timeset) {
+    if(timeset) {
 
     DateTime now = RTC.now();    
+
     
     int temp = sensors.getTempCByIndex(0);
 
@@ -281,19 +319,19 @@ void controlrelay() {
     Serial.print(F("Temperature is:"));Serial.println(temp);
     Serial.print(F("Relay status is:"));Serial.println(relaystatus);
     
-    if(hour==5) {
-      if(temp < 45) {
+    if(hour==5 || hour==6) {
+      if(temp < 50) {
         if(relaystatus==0) setrelay();
         relaystatus=1;
-      }else if(relaystatus==1 && temp > 45+2) {
+      }else if(relaystatus==1 && temp > 55+2) {
         resetrelay();
         relaystatus=0;
         }
-    } else if(hour==18) {
+    } else if(hour==18 || hour==19) {
       if(temp < 55) {
         if(relaystatus==0) setrelay();
         relaystatus=1;
-      } else if(relaystatus==1 && temp > 55+2) {
+      } else if(relaystatus==1 && temp > 55+5) {
         resetrelay();
         relaystatus=0;
         }
@@ -301,10 +339,9 @@ void controlrelay() {
         if(relaystatus==1) resetrelay();
         relaystatus=0;
     }
-    
-   
-    
+     
   }
-  
+
+
 }
 
