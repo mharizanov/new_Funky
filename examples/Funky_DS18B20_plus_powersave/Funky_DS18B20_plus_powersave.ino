@@ -13,7 +13,7 @@
 #define ASYNC_DELAY 375 // 9bit requres 95ms, 10bit 187ms, 11bit 375ms and 12bit resolution takes 750ms
 
 #define ONE_WIRE_BUS 8  // The data pin, digital 8
-#define tempPower 2     // Power up/down the DS18B20 sensor with this pin to save power
+#define tempPower 2     // Power up/down the DS18B20 sensor with this pin to save power, digital 2. Must have a 4.7K resistor between D8 and D2
 
 // Setup a oneWire instance to communicate with any OneWire devices 
 // (not just Maxim/Dallas temperature ICs)

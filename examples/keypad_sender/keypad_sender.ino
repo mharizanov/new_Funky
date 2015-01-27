@@ -26,7 +26,7 @@
 #include "RF12x.h" // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
-#define LEDpin 1
+#define LEDpin 13
 
 #define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
 #define RETRY_LIMIT 5     // Maximum number of times to retry
@@ -47,7 +47,7 @@ struct StoreStruct {
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_868MHZ, 210, 26, false, 20
+  RF12_868MHZ, 210, 23, false, 20
 };
 
 static byte value, stack[20], top;
@@ -77,8 +77,8 @@ SoftwareSerial mySerial(8, 13); // RX, TX
 void setup() {   
   // Because of the fuses, we are running @ 1Mhz now.  
 
-  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
-  digitalWrite(A5,LOW); //Start the RFM12B
+  pinMode(4,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(4,LOW); //Start the RFM12B
     
   pinMode(2,INPUT); // we will wake up from INT1
     
@@ -235,19 +235,27 @@ static void rfwrite(){
 // Read current supply voltage
 //--------------------------------------------------------------------------------------------------
  long readVcc() {
+  byte oldADMUX=ADMUX;  //Save ADC state
+  byte oldADCSRA=ADCSRA; 
+  byte oldADCSRB=ADCSRB;
+  
    long result;
    // Read 1.1V reference against Vcc
-   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
+//   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(24);
+   delay(2);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-   if(usb==0) clock_prescale_set(clock_div_1);     
+//   if(usb==0) clock_prescale_set(clock_div_2);     
+   
+   ADCSRA=oldADCSRA; // restore ADC state
+   ADCSRB=oldADCSRB;
+   ADMUX=oldADMUX;
    return result;
 } 
 //########################################################################################################################

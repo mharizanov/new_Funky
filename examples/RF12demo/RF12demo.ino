@@ -20,7 +20,7 @@
 #define DATAFLASH 0 // check for presence of DataFlash memory on JeeLink
 #define FLASH_MBIT  16  // support for various dataflash sizes: 4/8/16 Mbit
 
-#define LED_PIN   1 // activity LED, comment out to disable
+#define LED_PIN   13 // activity LED, comment out to disable
 
 #endif
 
@@ -650,7 +650,7 @@ static void handleInput (char c) {
         activityLed(value);
         break;
       case 'f': // send FS20 command: <hchi>,<hclo>,<addr>,<cmd>f
-        rf12_initialize(0, RF12_868MHZ);
+        rf12_initialize(0, RF12_433MHZ);
         activityLed(1);
         fs20cmd(256 * stack[0] + stack[1], stack[2], value);
         activityLed(0);
@@ -719,19 +719,19 @@ static void handleInput (char c) {
 }
 
 void setup() {
-  pinMode(A5,OUTPUT);
-  digitalWrite(A5,LOW);  //Turn on RFM12b via the MOSFET
+  pinMode(4,OUTPUT);
+  digitalWrite(4,LOW);  //Turn on RFM12b via the MOSFET
   
   Serial.begin(SERIAL_BAUD);
   Serial.print("\n[RF12demo.10]");
-  activityLed(0);
+  activityLed(1);
 
   if (rf12_config()) {
     config.nodeId = eeprom_read_byte(RF12_EEPROM_ADDR);
     config.group = eeprom_read_byte(RF12_EEPROM_ADDR + 1);
   } else {
-    config.nodeId = 0x81; // 433 MHz, node 1
-    config.group = 0xD2;  // default group 212
+    config.nodeId = 0x81; // 868 MHz, node 1
+    config.group = 0xD0;  // default group 210
     saveConfig();
   }
 

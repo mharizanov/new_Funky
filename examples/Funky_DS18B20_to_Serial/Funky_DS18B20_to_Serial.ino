@@ -1,4 +1,7 @@
 
+// To use on Funky v3 without Pull-up reistor, check Josh's post and his one wire library port
+// http://wp.josh.com/2014/06/23/no-external-pull-up-needed-for-ds18b20-temp-sensor/
+
 #include <OneWire.h>   // http://www.pjrc.com/teensy/arduino_libraries/OneWire.zip
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
 #define TEMPERATURE_PRECISION 9
@@ -14,7 +17,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-#define LEDpin 1
+#define LEDpin 13
 
 
 
@@ -24,31 +27,23 @@ DallasTemperature sensors(&oneWire);
 void setup() {
 
   pinMode(LEDpin,OUTPUT);
-  digitalWrite(LEDpin,LOW);  // LED on
+  digitalWrite(LEDpin,HIGH);  // LED on
   delay(100);
-  digitalWrite(LEDpin,HIGH);   // LED off
+  digitalWrite(LEDpin,LOW);   // LED off
     
   pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output
   digitalWrite(tempPower, HIGH); // turn sensor power on
-  delay(50);
+  delay(500);
   // Start up the library
   sensors.begin(); 
   numSensors=sensors.getDeviceCount(); 
 }
 
 void loop() {
-  digitalWrite(LEDpin,LOW);  //LED on for some time, to show we are alive
-
-  pinMode(tempPower, OUTPUT); // set power pin for DS18B20 to output  
-  digitalWrite(tempPower, HIGH); // turn DS18B20 sensor on
-  delay(20);
+  digitalWrite(LEDpin,HIGH);  //LED on for some time, to show we are alive
   sensors.requestTemperatures(); // Send the command to get temperatures  
-  
   Serial.println(sensors.getTempCByIndex(0));
-  digitalWrite(tempPower, LOW); // turn DS18B20 sensor off
-
-  digitalWrite(LEDpin,HIGH);  //LED off
-  
+  digitalWrite(LEDpin,LOW);  //LED off
   delay(2000);
   
 }

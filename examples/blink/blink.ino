@@ -1,13 +1,16 @@
+
+#define LED 13
+
 void setup(){
   Serial.begin(9600);
-  pinMode(1,OUTPUT);
+  pinMode(LED,OUTPUT);
 
 }
 void loop(){
   while(1){
-  digitalWrite(1,LOW);
+  digitalWrite(LED,LOW);
   delay(1000);
-  digitalWrite(1,HIGH);
+  digitalWrite(LED,HIGH);
   delay(1000);
   Serial.print(".");
 

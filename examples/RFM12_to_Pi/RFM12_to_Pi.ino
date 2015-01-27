@@ -9,7 +9,7 @@
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
 
-#define LED_PIN     1
+#define LED_PIN     13
 
 #define COLLECT 0x20 // collect mode, i.e. pass incoming without sending acks
 
@@ -216,8 +216,8 @@ void setup() {
     activityLed(1);
     Serial.begin(9600);
     
-    pinMode(A5,OUTPUT); // RFM12B power control pin
-    digitalWrite(A5,LOW); //Make sure the RFM12B is on
+    pinMode(4,OUTPUT); // RFM12B power control pin
+    digitalWrite(4,LOW); //Make sure the RFM12B is on
     delay(150);
 
     showString(PSTR("\n[RFM2Pi]\n"));   

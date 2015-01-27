@@ -3,10 +3,12 @@
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
 #define TEMPERATURE_PRECISION 9
  
-#define ONE_WIRE_BUS 11
-
+#define ONE_WIRE_BUS 2
 #include <avr/wdt.h>
 
+int brightness = 0;    // how bright the LED is
+int fadeAmount = 5;    // how many points to fade the LED by
+unsigned long lastset;
 
 // Setup a oneWire instance to communicate with any OneWire devices 
 // (not just Maxim/Dallas temperature ICs)
@@ -15,13 +17,9 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-// Connect D8 to SET, D2 to RESET
-
-#define LED 13
-#define SET 2
+#define LED 11
+#define SET 8
 #define RESET 8
-#define rsdelay 100
-#define TZOFFSET 0
 
 #include <avr/power.h>
 
@@ -30,7 +28,7 @@ DallasTemperature sensors(&oneWire);
 //--------------------------------------------------------------------------------------------
 // RFM12B Settings
 //--------------------------------------------------------------------------------------------
-#define MYNODE 7             // Should be unique on network, node ID 30 reserved for base station
+#define MYNODE 16             // Should be unique on network, node ID 30 reserved for base station
 #define freq RF12_868MHZ     // frequency - match to same frequency as RFM12B module (change to 868Mhz or 915Mhz if appropriate)
 #define group 210            // network group, must be same as emonTx and emonBase
 
@@ -51,22 +49,14 @@ void setrelay() {
   
   digitalWrite(SET,HIGH);
   digitalWrite(LED,HIGH);
-  delay(rsdelay);
-  digitalWrite(SET,LOW);
-  digitalWrite(LED,LOW);
-  delay(500);
   relaystatus=1;
 } 
 
 
 void resetrelay() {  
   
-  digitalWrite(RESET,HIGH);
-  digitalWrite(LED,HIGH);
-  delay(rsdelay);
   digitalWrite(RESET,LOW);
   digitalWrite(LED,LOW);
-  delay(500);  
   relaystatus=0;
 }
 
@@ -79,13 +69,12 @@ relayStruct relaypayload;
 unsigned long last_sent;
 
 void setup(){
- // clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
 
   //On board LED
   pinMode(LED,OUTPUT);
   digitalWrite(LED,HIGH);
 
-  delay(10000);
+  delay(1000);
 
   wdt_disable();
   //Relay driving pins
@@ -134,7 +123,7 @@ void loop() {
         Serial.println(" -> ack");        
       }
        
-        digitalWrite(LED,HIGH); //Blink LED to indicate packet received
+        digitalWrite(13,HIGH); //Blink LED to indicate packet received
        Serial.println(F("Received packet from base."));
        relaypayload = *(relayStruct*) rf12_data;                             
          
@@ -146,27 +135,24 @@ void loop() {
          }
          else 
          {    
-             //Ignore requests to turn on the hot water tank, if temperature is >55 degrees C
-             if(emonsolar.temperature<5500) {
-               rf12_sleep(0);                          // Put the RFM12 to sleep
-               setrelay();
-               rf12_sleep(-1);              // Wake up RF module          
-               Serial.print(F("Relay set to:"));Serial.println(relaypayload.relaystatus);         
-             }
+             rf12_sleep(0);                          // Put the RFM12 to sleep
+             setrelay();
+             rf12_sleep(-1);              // Wake up RF module          
+             Serial.print(F("Relay set to:"));Serial.println(relaypayload.relaystatus);         
          }     
          delay(200);
        }
       }
             
     delay(10);  //Make LED blink more visible
-    digitalWrite(LED,LOW);
+    digitalWrite(13,LOW);
   }
  
   
   
   if(millis()-last_sent>SEND_INTERVAL) {
 
-    digitalWrite(LED,HIGH); //Blink LED to indicate packet received 
+    digitalWrite(13,HIGH); //Blink LED to indicate packet received 
     sensors.requestTemperatures(); // Send the command to get temperatures    
     emonsolar.temperature=sensors.getTempCByIndex(0)*100;
     emonsolar.batt=readVcc();
@@ -174,14 +160,29 @@ void loop() {
     rfwrite();      
     last_sent=millis();
     delay(10);  //Make LED blink more visible
-    digitalWrite(LED,LOW);
+    digitalWrite(13,LOW);
     Serial.print(F("Temperature is:"));Serial.println(emonsolar.temperature);
-    
-    //No matter what, make sure relay is off in case temperature is > 60 degrees C
-    if(emonsolar.temperature>6000) {
-      resetrelay(); 
-    }
-  }
+      }
+ 
+ if(relaystatus==0) {
+  digitalWrite(LED,HIGH); 
+ }
+ else {
+   
+   if(millis()-lastset>10) {
+     lastset=millis();
+     // set the brightness:
+  analogWrite(LED, brightness);    
+  // change the brightness for next time through the loop:
+  brightness = brightness + fadeAmount;
+
+  // reverse the direction of the fading at the ends of the fade: 
+  if (brightness == 0 || brightness == 255) {
+    fadeAmount = -fadeAmount ; 
+  }     
+  
+ }
+ }
  
 }
 

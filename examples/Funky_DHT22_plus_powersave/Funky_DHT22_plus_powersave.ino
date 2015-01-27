@@ -40,7 +40,7 @@ struct StoreStruct {
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_868MHZ, 210, 27, false, 10
+  RF12_868MHZ, 210, 22, false, 250
 };
 
 static byte value, stack[20], top;
@@ -72,7 +72,7 @@ void setup() {
   //Detect if we are powered via the USB or battery; If we are powered via the USB, we don't need to be fancy about power saving and shall not disable the USB interface but rather allow configuration menu over serial
   USBCON = USBCON | B00010000; 
 
-  delay(550);  // Wait at least between 150ms and 550ms (necessary); Slower host like Raspberry Pi needs more time
+  delay(1000);  // Wait at least between 150ms and 550ms (necessary); Slower host like Raspberry Pi needs more time
 
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
@@ -274,6 +274,7 @@ static void rfwrite(){
 
 void powersave() {
   ADCSRA =0;
+  ACSR |= (1 << ACD); // disable Analog comparator      
   power_adc_disable();
   power_usart0_disable();
   //power_spi_disable();  /do that a bit later, after we power RFM12b down
