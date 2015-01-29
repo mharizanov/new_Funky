@@ -1,0 +1,62 @@
+   1               		.file	"Device_AVR8.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               		.section	.text.USB_Device_SendRemoteWakeup,"ax",@progbits
+  17               	.global	USB_Device_SendRemoteWakeup
+  19               	USB_Device_SendRemoteWakeup:
+  20               	.LFB80:
+  21               	.LSM0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24               	.LBB8:
+  25               	.LBB9:
+  26               	.LSM1:
+  27 0000 19BC      		out 73-32,__zero_reg__
+  28               	.LSM2:
+  29 0002 82E0      		ldi r24,lo8(2)
+  30 0004 89BD      		out 73-32,r24
+  31               	.L2:
+  32               	.LBE9:
+  33               	.LBE8:
+  34               	.LSM3:
+  35 0006 09B4      		in __tmp_reg__,73-32
+  36 0008 00FE      		sbrs __tmp_reg__,0
+  37 000a 00C0      		rjmp .L2
+  38               	.LBB10:
+  39               	.LBB11:
+  40               	.LSM4:
+  41 000c 8091 D800 		lds r24,216
+  42 0010 8F7D      		andi r24,lo8(-33)
+  43 0012 8093 D800 		sts 216,r24
+  44               	.LBE11:
+  45               	.LBE10:
+  46               	.LSM5:
+  47 0016 8091 E000 		lds r24,224
+  48 001a 8260      		ori r24,lo8(2)
+  49 001c 8093 E000 		sts 224,r24
+  50               	.L3:
+  51               	.LSM6:
+  52 0020 8091 E000 		lds r24,224
+  53 0024 81FD      		sbrc r24,1
+  54 0026 00C0      		rjmp .L3
+  55               	/* epilogue start */
+  56               	.LSM7:
+  57 0028 0895      		ret
+  58               	.LFE80:
+  84               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 Device_AVR8.c
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:2      *ABS*:0000003f __SREG__
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:5      *ABS*:00000034 __CCP__
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Martin\AppData\Local\Temp/cciXfrVb.s:19     .text.USB_Device_SendRemoteWakeup:00000000 USB_Device_SendRemoteWakeup
+
+NO UNDEFINED SYMBOLS

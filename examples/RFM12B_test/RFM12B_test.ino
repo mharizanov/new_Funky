@@ -45,7 +45,7 @@ struct StoreStruct {
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_868MHZ, 210, 27, false, 5
+  RF12_868MHZ, 210, 27, true, 50
 };
 
 static byte value, stack[20], top;

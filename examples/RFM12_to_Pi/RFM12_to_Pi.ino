@@ -1,9 +1,9 @@
-// RF12Demo for Funky v2
+// RF12Demo for Funky v3
 // Configure some values in EEPROM for easy config of the RF12 later on.
 // 2009-05-06 <jc@wippler.nl> http://opensource.org/licenses/mit-license.php
 
 
-#include <JeeLib.h>
+#include "RF12x.h"
 #include <util/crc16.h>
 #include <util/parity.h>
 #include <avr/pgmspace.h>
@@ -218,7 +218,7 @@ void setup() {
     
     pinMode(4,OUTPUT); // RFM12B power control pin
     digitalWrite(4,LOW); //Make sure the RFM12B is on
-    delay(150);
+    delay(1000);
 
     showString(PSTR("\n[RFM2Pi]\n"));   
     
@@ -233,10 +233,7 @@ void setup() {
         rf12_initialize(config.nodeId&0x1F, config.nodeId >> 6 ,config.group);  
         saveConfig();
     }
-
     showHelp();
-    delay(2000);
-
     rf12_control(0xC000);   
     activityLed(0);
 }

@@ -65,10 +65,10 @@
 		#define SOFTWARE_IDENTIFIER          "CATERINA"
 		
 		#define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
-		#define LED_SETUP()		DDRD |= (1<<3); 
-		#define L_LED_OFF()		PORTD &= ~(1<<3)
-		#define L_LED_ON()		PORTD |= (1<<3)
-		#define L_LED_TOGGLE()	PORTD^= (1<<3)
+		#define LED_SETUP()		DDRC |= (1<<7); 
+		#define L_LED_OFF()		PORTC &= ~(1<<7)
+		#define L_LED_ON()		PORTC |= (1<<7)
+		#define L_LED_TOGGLE()	PORTC^= (1<<7)
 		
 	/* Type Defines: */
 		/** Type define for a non-returning pointer to the start of the loaded application in flash memory. */

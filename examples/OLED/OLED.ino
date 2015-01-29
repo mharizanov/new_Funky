@@ -62,7 +62,7 @@ unsigned long fast_update;
 //other available is: _Digole_Serial_I2C_ and _Digole_Serial_SPI_
 #include "DigoleSerial.h"
 //--------UART setup, if you don't use UART, use // to comment following line
-DigoleSerialDisp mydisp(&mySerial, 9600); //UART:Arduino UNO: Pin 1(TX)on arduino to RX on module
+DigoleSerialDisp mydisp(&mySerial, 19200); //UART:Arduino UNO: Pin 1(TX)on arduino to RX on module
 //--------I2C setup, if you don't use I2C, use // to comment following 2 lines
 //#include <Wire.h>
 //DigoleSerialDisp mydisp(&Wire,'\x27');  //I2C:Arduino UNO: SDA (data line) is on analog input pin 4, and SCL (clock line) is on analog input pin 5

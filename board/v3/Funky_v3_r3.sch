@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.3">
+<eagle version="6.1">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -10718,7 +10718,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 <part name="IC2" library="JeeLabs" deviceset="LTC3525" device=""/>
 <part name="L1" library="SparkFun" deviceset="INDUCTOR" device="1210" value="10 µH"/>
 <part name="P+9" library="supply1" deviceset="VCC" device=""/>
-<part name="IC3" library="linear" deviceset="MCP1703" device="CB"/>
+<part name="TOREX-XC6206" library="linear" deviceset="MCP1703" device="CB"/>
 <part name="C5" library="rcl" deviceset="C-EU" device="C0603K" value="1uF"/>
 <part name="C6" library="rcl" deviceset="C-EU" device="C0603K" value="1u"/>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
@@ -10796,7 +10796,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 <instance part="IC2" gate="G$1" x="43.18" y="106.68"/>
 <instance part="L1" gate="G$1" x="33.02" y="124.46" rot="R90"/>
 <instance part="P+9" gate="VCC" x="68.58" y="124.46"/>
-<instance part="IC3" gate="G$1" x="116.84" y="121.92"/>
+<instance part="TOREX-XC6206" gate="G$1" x="116.84" y="121.92"/>
 <instance part="C5" gate="G$1" x="104.14" y="116.84"/>
 <instance part="C6" gate="G$1" x="137.16" y="116.84"/>
 <instance part="GND8" gate="1" x="104.14" y="106.68"/>
@@ -10965,7 +10965,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 <pinref part="C6" gate="G$1" pin="1"/>
 <wire x1="137.16" y1="119.38" x2="137.16" y2="121.92" width="0.1524" layer="91"/>
 <junction x="137.16" y="121.92"/>
-<pinref part="IC3" gate="G$1" pin="VO"/>
+<pinref part="TOREX-XC6206" gate="G$1" pin="VO"/>
 <wire x1="129.54" y1="121.92" x2="127" y2="121.92" width="0.1524" layer="91"/>
 <wire x1="134.62" y1="121.92" x2="129.54" y2="121.92" width="0.1524" layer="91"/>
 </segment>
@@ -11022,7 +11022,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 <wire x1="104.14" y1="109.22" x2="104.14" y2="111.76" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="IC3" gate="G$1" pin="GND"/>
+<pinref part="TOREX-XC6206" gate="G$1" pin="GND"/>
 <pinref part="GND9" gate="1" pin="GND"/>
 <wire x1="116.84" y1="109.22" x2="116.84" y2="114.3" width="0.1524" layer="91"/>
 </segment>
@@ -11169,7 +11169,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 </net>
 <net name="VBUS" class="1">
 <segment>
-<pinref part="IC3" gate="G$1" pin="VI"/>
+<pinref part="TOREX-XC6206" gate="G$1" pin="VI"/>
 <wire x1="106.68" y1="121.92" x2="104.14" y2="121.92" width="0.1524" layer="91"/>
 <pinref part="C5" gate="G$1" pin="1"/>
 <wire x1="104.14" y1="121.92" x2="104.14" y2="119.38" width="0.1524" layer="91"/>

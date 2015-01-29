@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.3">
+<eagle version="6.1">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -134,8 +134,8 @@
 <text x="13.594" y="3.813" size="1.016" layer="21" rot="R180">GND</text>
 <text x="12.462" y="20.134" size="1.016" layer="21">+3V3</text>
 <text x="16.505" y="21.402" size="1.016" layer="21">Ant.</text>
-<text x="18.688" y="16.896" size="0.8128" layer="21" font="vector">5V</text>
-<text x="17.728" y="14.4" size="0.8128" layer="21" font="vector">D11</text>
+<text x="18.432" y="14.208" size="0.8128" layer="21" font="vector">5V</text>
+<text x="17.792" y="17.088" size="0.8128" layer="21" font="vector">D11</text>
 <text x="17.6" y="11.84" size="0.8128" layer="21" font="vector">GND</text>
 <text x="17.6" y="8.704" size="0.8128" layer="21" font="vector">VCC</text>
 <text x="16.448" y="6.656" size="0.8128" layer="21" font="vector">D8/A8</text>
@@ -2761,7 +2761,7 @@ We've spent an enormous amount of time creating and checking these footprints an
 <clearance class="1" value="0.2032"/>
 </class>
 </classes>
-<designrules name="default">
+<designrules>
 <description language="de">&lt;b&gt;EAGLE Design Rules Prototypen  für PCB-POOL(R)&lt;/b&gt;
 &lt;p&gt;
 Wir haben in diesem DRU File alle notwendigen Design Einstellungen vorgenommen, damit Sie Ihre Leiterplatte 
@@ -2970,7 +2970,7 @@ design rules under a new name.
 <element name="C4" library="SparkFun" package="0805" value="10µ" x="14.99" y="1.714" rot="R180"/>
 <element name="IC2" library="JeeLabs" package="SC70" value="LTC3525" x="16.579" y="4.384" rot="R180"/>
 <element name="L1" library="SparkFun" package="1210" value="10 µH" x="15.614" y="2.095" rot="MR180"/>
-<element name="IC3" library="linear" package="SOT23" value="MCP1703CB" x="3.048" y="21.463" rot="MR90"/>
+<element name="TOREX-XC6206" library="linear" package="SOT23" value="MCP1703CB" x="3.048" y="21.463" rot="MR90"/>
 <element name="C5" library="rcl" package="C0603K" value="1uF" x="11.56" y="20.016"/>
 <element name="C6" library="rcl" package="C0603K" value="1u" x="9.525" y="21.463" rot="MR270"/>
 <element name="R3" library="SparkFun" package="0402-RES" value="10K" x="3.302" y="14.986"/>
@@ -3024,7 +3024,7 @@ design rules under a new name.
 <contactref element="Q1" pad="2"/>
 <contactref element="C6" pad="1"/>
 <contactref element="PAD10" pad="1"/>
-<contactref element="IC3" pad="2"/>
+<contactref element="TOREX-XC6206" pad="2"/>
 <wire x1="12.3169" y1="12.1841" x2="12.476" y2="12.025" width="0.254" layer="16"/>
 <wire x1="12.476" y1="12.025" x2="16.6437" y2="12.025" width="0.254" layer="16"/>
 <wire x1="12.0391" y1="8.536" x2="12.0391" y2="7.7134" width="0.254" layer="1"/>
@@ -3107,7 +3107,7 @@ design rules under a new name.
 <contactref element="IC2" pad="5"/>
 <contactref element="C6" pad="2"/>
 <contactref element="C5" pad="2"/>
-<contactref element="IC3" pad="1"/>
+<contactref element="TOREX-XC6206" pad="1"/>
 <contactref element="C7" pad="1"/>
 <contactref element="C8" pad="2"/>
 <contactref element="C9" pad="2"/>
@@ -3347,7 +3347,7 @@ design rules under a new name.
 <wire x1="18.1443" y1="2.459" x2="18.325" y2="2.6397" width="0.254" layer="16"/>
 </signal>
 <signal name="VBUS" class="1">
-<contactref element="IC3" pad="3"/>
+<contactref element="TOREX-XC6206" pad="3"/>
 <contactref element="C5" pad="1"/>
 <contactref element="U3" pad="7"/>
 <contactref element="U3" pad="2"/>

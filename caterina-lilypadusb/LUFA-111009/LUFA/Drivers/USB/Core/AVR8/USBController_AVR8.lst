@@ -1,0 +1,253 @@
+   1               		.file	"USBController_AVR8.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               		.section	.text.USB_Disable,"ax",@progbits
+  17               	.global	USB_Disable
+  19               	USB_Disable:
+  20               	.LFB81:
+  21               	.LSM0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24               	.LSM1:
+  25 0000 0E94 0000 		call USB_INT_DisableAllInterrupts
+  26               	.LSM2:
+  27 0004 0E94 0000 		call USB_INT_ClearAllInterrupts
+  28               	.LBB40:
+  29               	.LBB41:
+  30               	.LSM3:
+  31 0008 E0EE      		ldi r30,lo8(224)
+  32 000a F0E0      		ldi r31,hi8(224)
+  33 000c 8081      		ld r24,Z
+  34 000e 8160      		ori r24,lo8(1)
+  35 0010 8083      		st Z,r24
+  36               	.LBE41:
+  37               	.LBE40:
+  38               	.LBB42:
+  39               	.LBB43:
+  40               	.LSM4:
+  41 0012 A8ED      		ldi r26,lo8(216)
+  42 0014 B0E0      		ldi r27,hi8(216)
+  43 0016 8C91      		ld r24,X
+  44 0018 8F77      		andi r24,lo8(127)
+  45 001a 8C93      		st X,r24
+  46               	.LBE43:
+  47               	.LBE42:
+  48               	.LBB44:
+  49               	.LBB45:
+  50               	.LSM5:
+  51 001c 19BC      		out 73-32,__zero_reg__
+  52               	.LBE45:
+  53               	.LBE44:
+  54               	.LBB46:
+  55               	.LBB47:
+  56               	.LSM6:
+  57 001e E7ED      		ldi r30,lo8(215)
+  58 0020 F0E0      		ldi r31,hi8(215)
+  59 0022 8081      		ld r24,Z
+  60 0024 8E7F      		andi r24,lo8(-2)
+  61 0026 8083      		st Z,r24
+  62               	.LBE47:
+  63               	.LBE46:
+  64               	.LBB48:
+  65               	.LBB49:
+  66               	.LSM7:
+  67 0028 8C91      		ld r24,X
+  68 002a 8F7E      		andi r24,lo8(-17)
+  69 002c 8C93      		st X,r24
+  70               	.LBE49:
+  71               	.LBE48:
+  72               	.LSM8:
+  73 002e 1092 0000 		sts USB_IsInitialized,__zero_reg__
+  74               	/* epilogue start */
+  75               	.LSM9:
+  76 0032 0895      		ret
+  77               	.LFE81:
+  79               		.section	.text.USB_ResetInterface,"ax",@progbits
+  80               	.global	USB_ResetInterface
+  82               	USB_ResetInterface:
+  83               	.LFB82:
+  84               	.LSM10:
+  85 0000 EF92      		push r14
+  86 0002 FF92      		push r15
+  87 0004 0F93      		push r16
+  88 0006 1F93      		push r17
+  89               	/* prologue: function */
+  90               	/* frame size = 0 */
+  91               	.LSM11:
+  92 0008 0E94 0000 		call USB_INT_DisableAllInterrupts
+  93               	.LSM12:
+  94 000c 0E94 0000 		call USB_INT_ClearAllInterrupts
+  95               	.LBB76:
+  96               	.LBB77:
+  97               	.LSM13:
+  98 0010 08ED      		ldi r16,lo8(216)
+  99 0012 10E0      		ldi r17,hi8(216)
+ 100 0014 F801      		movw r30,r16
+ 101 0016 8081      		ld r24,Z
+ 102 0018 8F77      		andi r24,lo8(127)
+ 103 001a 8083      		st Z,r24
+ 104               	.LSM14:
+ 105 001c 8081      		ld r24,Z
+ 106 001e 8068      		ori r24,lo8(-128)
+ 107 0020 8083      		st Z,r24
+ 108               	.LBE77:
+ 109               	.LBE76:
+ 110               	.LBB78:
+ 111               	.LBB79:
+ 112               	.LSM15:
+ 113 0022 8081      		ld r24,Z
+ 114 0024 8F7D      		andi r24,lo8(-33)
+ 115 0026 8083      		st Z,r24
+ 116               	.LBE79:
+ 117               	.LBE78:
+ 118               	.LBB80:
+ 119               	.LBB81:
+ 120               	.LSM16:
+ 121 0028 19BC      		out 73-32,__zero_reg__
+ 122               	.LBE81:
+ 123               	.LBE80:
+ 124               	.LBB82:
+ 125               	.LBB83:
+ 126               	.LSM17:
+ 127 002a 1EBA      		out 62-32,__zero_reg__
+ 128               	.LSM18:
+ 129 002c 1092 0000 		sts USB_Device_ConfigurationNumber,__zero_reg__
+ 130               	.LBB84:
+ 131               	.LBB85:
+ 132               	.LSM19:
+ 133 0030 80EE      		ldi r24,lo8(224)
+ 134 0032 E82E      		mov r14,r24
+ 135 0034 F12C      		mov r15,__zero_reg__
+ 136 0036 F701      		movw r30,r14
+ 137 0038 8081      		ld r24,Z
+ 138 003a 8B7F      		andi r24,lo8(-5)
+ 139 003c 8083      		st Z,r24
+ 140               	.LBE85:
+ 141               	.LBE84:
+ 142               	.LBB86:
+ 143               	.LBB87:
+ 144               	.LSM20:
+ 145 003e F801      		movw r30,r16
+ 146 0040 8081      		ld r24,Z
+ 147 0042 8160      		ori r24,lo8(1)
+ 148 0044 8083      		st Z,r24
+ 149               	.LBE87:
+ 150               	.LBE86:
+ 151               	.LBB88:
+ 152               	.LBB89:
+ 153               	.LSM21:
+ 154 0046 80E0      		ldi r24,lo8(0)
+ 155 0048 60E0      		ldi r22,lo8(0)
+ 156 004a 42E0      		ldi r20,lo8(2)
+ 157 004c 0E94 0000 		call Endpoint_ConfigureEndpoint_Prv
+ 158               	.LBE89:
+ 159               	.LBE88:
+ 160               	.LBB90:
+ 161               	.LBB91:
+ 162               	.LSM22:
+ 163 0050 E1EE      		ldi r30,lo8(225)
+ 164 0052 F0E0      		ldi r31,hi8(225)
+ 165 0054 8081      		ld r24,Z
+ 166 0056 8E7F      		andi r24,lo8(-2)
+ 167 0058 8083      		st Z,r24
+ 168               	.LBE91:
+ 169               	.LBE90:
+ 170               	.LBB92:
+ 171               	.LBB93:
+ 172               	.LSM23:
+ 173 005a E2EE      		ldi r30,lo8(226)
+ 174 005c F0E0      		ldi r31,hi8(226)
+ 175 005e 8081      		ld r24,Z
+ 176 0060 8160      		ori r24,lo8(1)
+ 177 0062 8083      		st Z,r24
+ 178               	.LBE93:
+ 179               	.LBE92:
+ 180               	.LBB94:
+ 181               	.LBB95:
+ 182               	.LSM24:
+ 183 0064 8081      		ld r24,Z
+ 184 0066 8860      		ori r24,lo8(8)
+ 185 0068 8083      		st Z,r24
+ 186               	.LBE95:
+ 187               	.LBE94:
+ 188               	.LBB96:
+ 189               	.LBB97:
+ 190               	.LSM25:
+ 191 006a F701      		movw r30,r14
+ 192 006c 8081      		ld r24,Z
+ 193 006e 8E7F      		andi r24,lo8(-2)
+ 194 0070 8083      		st Z,r24
+ 195               	.LBE97:
+ 196               	.LBE96:
+ 197               	.LBE83:
+ 198               	.LBE82:
+ 199               	.LBB98:
+ 200               	.LBB99:
+ 201               	.LSM26:
+ 202 0072 F801      		movw r30,r16
+ 203 0074 8081      		ld r24,Z
+ 204 0076 8061      		ori r24,lo8(16)
+ 205 0078 8083      		st Z,r24
+ 206               	/* epilogue start */
+ 207               	.LBE99:
+ 208               	.LBE98:
+ 209               	.LSM27:
+ 210 007a 1F91      		pop r17
+ 211 007c 0F91      		pop r16
+ 212 007e FF90      		pop r15
+ 213 0080 EF90      		pop r14
+ 214 0082 0895      		ret
+ 215               	.LFE82:
+ 217               		.section	.text.USB_Init,"ax",@progbits
+ 218               	.global	USB_Init
+ 220               	USB_Init:
+ 221               	.LFB80:
+ 222               	.LSM28:
+ 223               	/* prologue: function */
+ 224               	/* frame size = 0 */
+ 225               	.LBB100:
+ 226               	.LBB101:
+ 227               	.LSM29:
+ 228 0000 E7ED      		ldi r30,lo8(215)
+ 229 0002 F0E0      		ldi r31,hi8(215)
+ 230 0004 8081      		ld r24,Z
+ 231 0006 8160      		ori r24,lo8(1)
+ 232 0008 8083      		st Z,r24
+ 233               	.LBE101:
+ 234               	.LBE100:
+ 235               	.LSM30:
+ 236 000a 8AE4      		ldi r24,lo8(74)
+ 237 000c 82BF      		out 82-32,r24
+ 238               	.LSM31:
+ 239 000e 81E0      		ldi r24,lo8(1)
+ 240 0010 8093 0000 		sts USB_IsInitialized,r24
+ 241               	.LSM32:
+ 242 0014 0E94 0000 		call USB_ResetInterface
+ 243               	/* epilogue start */
+ 244               	.LSM33:
+ 245 0018 0895      		ret
+ 246               	.LFE80:
+ 288               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 USBController_AVR8.c
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:2      *ABS*:0000003f __SREG__
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:5      *ABS*:00000034 __CCP__
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:19     .text.USB_Disable:00000000 USB_Disable
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:82     .text.USB_ResetInterface:00000000 USB_ResetInterface
+C:\Users\Martin\AppData\Local\Temp/ccasBEBJ.s:220    .text.USB_Init:00000000 USB_Init
+
+UNDEFINED SYMBOLS
+USB_INT_DisableAllInterrupts
+USB_INT_ClearAllInterrupts
+USB_IsInitialized
+USB_Device_ConfigurationNumber
+Endpoint_ConfigureEndpoint_Prv

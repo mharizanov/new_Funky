@@ -5,6 +5,9 @@
  
 #define ONE_WIRE_BUS 13
 
+#include <avr/wdt.h>
+
+
 // Setup a oneWire instance to communicate with any OneWire devices 
 // (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
@@ -20,7 +23,7 @@ DallasTemperature sensors(&oneWire);
 #define rsdelay 50
 #define QUERY_INTERVAL 30000
 #define SEND_INTERVAL 50000
-#define TZOFFSET 3
+#define TZOFFSET 0
 
 #include <avr/power.h>
 
@@ -34,13 +37,13 @@ DallasTemperature sensors(&oneWire);
 #define group 210            // network group, must be same as emonTx and emonBase
 
 
-#define ACK  1            // Require ACK?
+#define ACK  0            // Require ACK?
 #define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
 #define RETRY_LIMIT 5     // Maximum number of times to retry
 #define ACK_TIME 15       // Number of milliseconds to wait for an ack
 
 #define GATEWAYID 16  
-#define EMONCMS_CONTROL_FEEDID 21367; 
+#define EMONCMS_CONTROL_FEEDID (int)93; 
 
 #include <RTClib.h>                 // Real time clock (RTC) - used for software RTC to reset kWh counters at midnight
 #include <Wire.h>                   // Part of Arduino libraries - needed for RTClib
@@ -88,8 +91,9 @@ static int feed_val;
 
 
 void setup(){
-  clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
+ // clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
 
+  wdt_disable();
   //Relay driving pins
   pinMode(SET,OUTPUT);
   pinMode(RESET,OUTPUT);
@@ -97,7 +101,7 @@ void setup(){
 
   Serial.begin(9600);
 
-  for (byte i=0;i<5;i++,delay(1000),Serial.print('.'));
+  for (byte i=0;i<10;i++,delay(1000),Serial.print('.'));
   
   //On board LED
   pinMode(LED,OUTPUT);
@@ -114,10 +118,13 @@ void setup(){
 
   digitalWrite(LED,LOW);
   
+  wdt_enable(WDTO_8S); 
   
 }
 void loop() {
    
+  wdt_reset();
+     
    if (rf12_recvDone())
   {
     if (rf12_crc == 0 && (rf12_hdr & RF12_HDR_CTL) == 0)  // and no rf errors
@@ -125,11 +132,12 @@ void loop() {
       digitalWrite(LED,HIGH); //Blink LED to indicate packet received
       
       byte node_id = (rf12_hdr & 0x1F);
+      
       if (node_id == GATEWAYID)
       {        
        emonbase = *(PayloadBase*) rf12_data;                           
        
-       if(emonbase.magic=='t') {
+       if(emonbase.magic=='t') { //Valid emonbase time packet?
          RTC.begin(DateTime(2013, 1, 1, emonbase.hour, emonbase.mins, emonbase.sec));
          last_emonbase = millis(); 
          timeset=1;
@@ -177,7 +185,7 @@ void loop() {
 
     askpayload.node_id=MYNODE;
     askpayload.feed_id=EMONCMS_CONTROL_FEEDID;
-    askpayload.feed_val=NULL;
+    askpayload.feed_val=0;
     
     byte i = 0; while (!rf12_canSend() && i<10) {rf12_recvDone(); i++;}
     rf12_sendStart(RF12_HDR_DST | GATEWAYID, &askpayload, sizeof askpayload);
@@ -246,8 +254,8 @@ static void rfwrite(){
      }
      else {
       while (!rf12_canSend())
-      rf12_recvDone();
-      rf12_sendStart(RF12_HDR_ACK, &emonsolar, sizeof(emonsolar)); 
+         rf12_recvDone();
+      rf12_sendStart(0, &emonsolar, sizeof(emonsolar)); 
       rf12_sendWait(0); 
      }
 }
