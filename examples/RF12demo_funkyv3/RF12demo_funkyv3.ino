@@ -29,94 +29,10 @@
 #define MINOR_VERSION 2                   // bump on other non-trivial changes
 #define VERSION "[RF12demo.12]"           // keep in sync with the above
 
-#if defined(__AVR_ATtiny84__) || defined(__AVR_ATtiny44__)
-#define TINY        1
-#define SERIAL_BAUD 38400   // can only be 9600 or 38400
-#define DATAFLASH   0       // do not change
-#undef  LED_PIN             // do not change
-#define rf12_configDump()   // disabled
-#else
-#define TINY        0
-#define SERIAL_BAUD 57600   // adjust as needed
-#define DATAFLASH   0       // set to 0 for non-JeeLinks, else 4/8/16 (Mbit)
-#define LED_PIN     13       // activity LED, comment out to disable
-#endif
 
 /// Save a few bytes of flash by declaring const if used more than once.
 const char INVALID1[] PROGMEM = "\rInvalid\n";
 const char INITFAIL[] PROGMEM = "config save failed\n";
-
-#if TINY
-// Serial support (output only) for Tiny supported by TinyDebugSerial
-// http://www.ernstc.dk/arduino/tinycom.html
-// 9600, 38400, or 115200
-// hardware\jeelabs\avr\cores\tiny\TinyDebugSerial.h Modified to
-// moveTinyDebugSerial from PB0 to PA3 to match the Jeenode Micro V3 PCB layout
-// Connect Tiny84 PA3 to USB-BUB RXD for serial output from sketch.
-// Jeenode AIO2
-//
-// With thanks for the inspiration by 2006 David A. Mellis and his AFSoftSerial
-// code. All right reserved.
-// Connect Tiny84 PA2 to USB-BUB TXD for serial input to sketch.
-// Jeenode DIO2
-// 9600 or 38400 at present.
-
-#if SERIAL_BAUD == 9600
-#define BITDELAY 54          // 9k6 @ 8MHz, 19k2 @16MHz
-#endif
-#if SERIAL_BAUD == 38400
-#define BITDELAY 11         // 38k4 @ 8MHz, 76k8 @16MHz
-#endif
-
-#define _receivePin 8
-static int _bitDelay;
-static char _receive_buffer;
-static byte _receive_buffer_index;
-
-static void showString (PGM_P s); // forward declaration
-
-ISR (PCINT0_vect) {
-    char i, d = 0;
-    if (digitalRead(_receivePin))       // PA2 = Jeenode DIO2
-        return;             // not ready!
-    whackDelay(_bitDelay - 8);
-    for (i=0; i<8; i++) {
-        whackDelay(_bitDelay*2 - 6);    // digitalread takes some time
-        if (digitalRead(_receivePin)) // PA2 = Jeenode DIO2
-            d |= (1 << i);
-    }
-    whackDelay(_bitDelay*2);
-    if (_receive_buffer_index)
-        return;
-    _receive_buffer = d;                // save data
-    _receive_buffer_index = 1;  // got a byte
-}
-
-// TODO: replace with code from the std avr libc library:
-//  http://www.nongnu.org/avr-libc/user-manual/group__util__delay__basic.html
-void whackDelay (word delay) {
-    byte tmp=0;
-
-    asm volatile("sbiw      %0, 0x01 \n\t"
-                 "ldi %1, 0xFF \n\t"
-                 "cpi %A0, 0xFF \n\t"
-                 "cpc %B0, %1 \n\t"
-                 "brne .-10 \n\t"
-                 : "+r" (delay), "+a" (tmp)
-                 : "0" (delay)
-                 );
-}
-
-static byte inChar () {
-    byte d;
-    if (! _receive_buffer_index)
-        return -1;
-    d = _receive_buffer; // grab first and only byte
-    _receive_buffer_index = 0;
-    return d;
-}
-
-#endif
 
 static unsigned long now () {
     // FIXME 49-day overflow
@@ -147,9 +63,6 @@ static void showString (PGM_P s) {
 
 static void displayVersion () {
     showString(PSTR(VERSION));
-#if TINY
-    showString(PSTR(" Tiny"));
-#endif
 }
 
 /// @details
@@ -284,24 +197,6 @@ static void kakuSend(char addr, byte device, byte on) {
 
 #endif
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// DataFlash code
-
-#if DATAFLASH
-#include "dataflash.h"
-#else // DATAFLASH
-
-#define df_present() 0
-#define df_initialize()
-#define df_dump()
-#define df_replay(x,y)
-#define df_erase(x)
-#define df_wipe()
-#define df_append(x,y)
-
-#endif
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 const char helpText1[] PROGMEM =
     "\n"
@@ -323,24 +218,10 @@ const char helpText1[] PROGMEM =
     "  <addr>,<dev>,<on> k              - KAKU command (433 MHz)\n"
 ;
 
-const char helpText2[] PROGMEM =
-    "Flash storage (JeeLink only):\n"
-    "    d                                  - dump all log markers\n"
-    "    <sh>,<sl>,<t3>,<t2>,<t1>,<t0> r    - replay from specified marker\n"
-    "    123,<bhi>,<blo> e                  - erase 4K block\n"
-    "    12,34 w                            - wipe entire flash memory\n"
-;
-
 static void showHelp () {
-#if TINY
-    showString(PSTR("?\n"));
-#else
     showString(helpText1);
-    if (df_present())
-        showString(helpText2);
     showString(PSTR("Current configuration:\n"));
     rf12_configDump();
-#endif
 }
 
 static void handleInput (char c) {
@@ -401,7 +282,6 @@ static void handleInput (char c) {
                 config.frequency_offset = value;
                 saveConfig();
             }
-#if !TINY
             // this code adds about 400 bytes to flash memory use
             // display the exact frequency associated with this setting
             byte freq = 0, band = config.nodeId >> 6;
@@ -420,7 +300,6 @@ static void handleInput (char c) {
             printOneChar('0' + (f2 / 10) % 10);
             printOneChar('0' + f2 % 10);
             Serial.println(" MHz");
-#endif
             break;
         }
 
@@ -491,43 +370,13 @@ static void handleInput (char c) {
         case 'v': //display the interpreter version and configuration
             displayVersion();
             rf12_configDump();
-#if TINY
             Serial.println();
-#endif
             break;
 
 // the following commands all get optimised away when TINY is set
 
         case 'l': // turn activity LED on or off
             activityLed(value);
-            break;
-
-        case 'd': // dump all log markers
-            if (df_present())
-                df_dump();
-            break;
-
-        case 'r': // replay from specified seqnum/time marker
-            if (df_present()) {
-                word seqnum = (stack[0] << 8) | stack[1];
-                long asof = (stack[2] << 8) | stack[3];
-                asof = (asof << 16) | ((stack[4] << 8) | value);
-                df_replay(seqnum, asof);
-            }
-            break;
-
-        case 'e': // erase specified 4Kb block
-            if (df_present() && stack[0] == 123) {
-                word block = (stack[1] << 8) | value;
-                df_erase(block);
-            }
-            break;
-
-        case 'w': // wipe entire flash memory
-            if (df_present() && stack[0] == 12 && value == 34) {
-                df_wipe();
-                showString(PSTR("erased\n"));
-            }
             break;
 
         default:
@@ -548,25 +397,11 @@ static void displayASCII (const byte* data, byte count) {
 }
 
 void setup () {
-    delay(100); // shortened for now. Handy with JeeNode Micro V1 where ISP
-                // interaction can be upset by RF12B startup process.
 
-#if TINY
-    PCMSK0 |= (1<<PCINT2);  // tell pin change mask to listen to PA2
-    GIMSK |= (1<<PCIE0);    // enable PCINT interrupt in general interrupt mask
-    // FIXME: _bitDelay has not yet been initialised here !?
-    whackDelay(_bitDelay*2); // if we were low this establishes the end
-    pinMode(_receivePin, INPUT);        // PA2
-    digitalWrite(_receivePin, HIGH);    // pullup!
-    _bitDelay = BITDELAY;
-#endif
-
+    delay(200);
+    
     pinMode(4,OUTPUT); // Funky v3 RFM12B power control pin
     digitalWrite(4,LOW); //Make sure the RFM12B is on
-
-    Serial.begin(SERIAL_BAUD);
-    Serial.println();
-    displayVersion();
 
     if (rf12_configSilent()) {
         loadConfig();
@@ -581,20 +416,17 @@ void setup () {
     }
 
     rf12_configDump();
-    df_initialize();
-#if !TINY
     showHelp();
-#endif
+
+    Serial.begin(57600);
+    Serial.println();
+    displayVersion();
+
 }
 
 void loop () {
-#if TINY
-    if (_receive_buffer_index)
-        handleInput(inChar());
-#else
     if (Serial.available())
         handleInput(Serial.read());
-#endif
     if (rf12_recvDone()) {
         byte n = rf12_len;
         if (rf12_crc == 0)
@@ -642,9 +474,6 @@ void loop () {
 
         if (rf12_crc == 0) {
             activityLed(1);
-
-            if (df_present())
-                df_append((const char*) rf12_data - 2, rf12_len + 2);
 
             if (RF12_WANTS_ACK && (config.collect_mode) == 0) {
                 showString(PSTR(" -> ack\n"));
