@@ -19,6 +19,7 @@
 
 #define RF69_COMPAT 0 // define this to use the RF69 driver i.s.o. RF12
 
+#define LED_PIN 13
 #include <JeeLib.h>
 #include <util/crc16.h>
 #include <avr/eeprom.h>
