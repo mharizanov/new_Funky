@@ -24,7 +24,7 @@
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
-#define LEDpin 1
+#define LEDpin 13
 
 #define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
 #define RETRY_LIMIT 5     // Maximum number of times to retry
@@ -45,7 +45,7 @@ struct StoreStruct {
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_868MHZ, 210, 27, true, 50
+  RF12_868MHZ, 210, 27, true, 20
 };
 
 static byte value, stack[20], top;
@@ -68,8 +68,8 @@ static byte usb;  // Are we powered via the USB? If so, do not disable it
 void setup() {   
   // Because of the fuses, we are running @ 1Mhz now.  
 
-  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
-  digitalWrite(A5,LOW); //Start the RFM12B
+  pinMode(4,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(4,LOW); //Start the RFM12B
     
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 

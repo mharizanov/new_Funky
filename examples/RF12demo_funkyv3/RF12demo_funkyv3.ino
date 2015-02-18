@@ -398,12 +398,12 @@ static void displayASCII (const byte* data, byte count) {
 }
 
 void setup () {
-
-    delay(200);
     
     pinMode(4,OUTPUT); // Funky v3 RFM12B power control pin
     digitalWrite(4,LOW); //Make sure the RFM12B is on
 
+    delay(100);  //Allow some time for proper start up
+    
     if (rf12_configSilent()) {
         loadConfig();
     } else {
