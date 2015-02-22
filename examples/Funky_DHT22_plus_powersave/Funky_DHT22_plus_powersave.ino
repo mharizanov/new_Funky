@@ -4,6 +4,9 @@
 // GNU GPL V3
 //--------------------------------------------------------------------------------------
 
+#define RF69_COMPAT 0 // define this to use the RF69 driver i.s.o. RF12
+
+
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
@@ -19,7 +22,7 @@ DHT22 dht(DHT22Pin); // Setup the DHT
 #include <avr/power.h>
 #include <avr/sleep.h>
 
-#define LEDpin 1
+#define LEDpin 13
 
 #define RETRY_PERIOD 1    // How soon to retry (in seconds) if ACK didn't come in
 #define RETRY_LIMIT 5     // Maximum number of times to retry
@@ -76,9 +79,6 @@ void setup() {
 
   pinMode(LEDpin,OUTPUT);
   digitalWrite(LEDpin,HIGH); 
-
-  pinMode(A5,OUTPUT);  //Set RFM12B power control pin (REV 1)
-  digitalWrite(A5,LOW); //Start the RFM12B
   
   loadConfig();
    
@@ -120,10 +120,15 @@ void setup() {
     }
  
   digitalWrite(LEDpin,LOW);  
- 
+
+  pinMode(4,OUTPUT);  //Set RFM12B power control pin (REV 1)
+  digitalWrite(4,LOW); //Start the RFM12B
+
+  dodelay(200);
+  
   rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
   // Adjust low battery voltage to 2.2V
-  rf12_control(0xC000);
+  //rf12_control(0xC000);
   rf12_sleep(0);                          // Put the RFM12 to sleep
 
   power_spi_disable();   
