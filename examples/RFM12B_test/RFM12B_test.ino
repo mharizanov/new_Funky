@@ -21,6 +21,8 @@
 #include <avr/power.h>
 #include <avr/sleep.h>
 
+#define RF69_COMPAT 0 // define this to use the RF69 driver i.s.o. RF12
+
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
 
@@ -66,19 +68,22 @@ static byte usb;  // Are we powered via the USB? If so, do not disable it
 
 
 void setup() {   
-  // Because of the fuses, we are running @ 1Mhz now.  
+
+  pinMode(LEDpin,OUTPUT);
+  digitalWrite(LEDpin,HIGH); 
 
   pinMode(4,OUTPUT);  //Set RFM12B power control pin (REV 1)
   digitalWrite(4,LOW); //Start the RFM12B
     
-  pinMode(LEDpin,OUTPUT);
-  digitalWrite(LEDpin,HIGH); 
-
   loadConfig();
+
+  delay(100);
+  rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
+  // Adjust low battery voltage to 2.2V
 
   USBCON = USBCON | B00010000; 
 
-  delay(1000);  // Wait at least between 150ms and 1000ms (necessary); Slower host like Raspberry Pi needs more time
+  delay(500);  // Wait at least between 150ms and 1000ms (necessary); Slower host like Raspberry Pi needs more time
  
   if (UDINT & B00000001){
       // USB Disconnected; We are running on battery so we must save power
@@ -118,9 +123,6 @@ void setup() {
  
   digitalWrite(LEDpin,LOW);  
  
-  rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
-  // Adjust low battery voltage to 2.2V
-  rf12_control(0xC000);
   
  /* 
  // Transmission power experimenting, see http://harizanov.com/2013/07/reducing-rfm12b-transmission-power/
