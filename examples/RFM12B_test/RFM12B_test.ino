@@ -79,7 +79,7 @@ void setup() {
 
   delay(100);
   rf12_initialize(storage.myNodeID,storage.freq,storage.network); // Initialize RFM12 
-  // Adjust low battery voltage to 2.2V
+  rf12_sleep(0);                          // Put the RFM12 to sleep
 
   USBCON = USBCON | B00010000; 
 
@@ -103,7 +103,7 @@ void setup() {
       }
 
       Serial.begin(57600);  // Pretty much useless on USB CDC, in fact this procedure is blank. Included here so peope don't wonder where is Serial.begin
-      showString(PSTR("\n[Funky v2]\n"));   
+      showString(PSTR("\n[Funky v3]\n"));   
       showHelp();
 
       // Wait for configuration for 10 seconds, then timeout and start the sketch
@@ -131,8 +131,6 @@ void setup() {
  rf12_control(0x9850 | (txPower > 7 ? 7 : txPower)); // !mp,90kHz,MAX OUT               //last byte=power level: 0=highest, 7=lowest
  */
   
-  rf12_sleep(0);                          // Put the RFM12 to sleep
-
 
   power_spi_disable();   
 
