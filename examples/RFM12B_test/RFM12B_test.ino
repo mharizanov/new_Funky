@@ -1,30 +1,16 @@
 //--------------------------------------------------------------------------------------
-// Ultra low power test for the Funkyv2; Sends an incrementing value and the VCC readout every 10 seconds
+// Ultra low power test for the Funky v3; Sends an incrementing value and the VCC readout every 1 second
 // harizanov.com
 // GNU GPL V3
 //--------------------------------------------------------------------------------------
-
- /* 
-   I run this sketch with the following Atmega32u4 fuses
-   low_fuses=0x7f
-   high_fuses=0xd8
-   extended_fuses=0xcd
-   meaning:
-   external crystal 8Mhz, start-up 16K CK+65ms; 
-   Divide clock by 8 internally; [CKDIV8=0]  (We will start at 1Mhz since BOD level is 2.2V)
-   Boot Reset vector Enabled (default address=$0000); [BOOTRST=0]
-   Boot flsh size=2048K words
-   Serial program downloading (SPI) enabled; [SPIEN=0]
-   BOD=2.2V
-*/
-
-#include <avr/power.h>
-#include <avr/sleep.h>
 
 #define RF69_COMPAT 0 // define this to use the RF69 driver i.s.o. RF12
 
 #include <JeeLib.h> // https://github.com/jcw/jeelib
 #include "pins_arduino.h"
+
+#include <avr/power.h>
+#include <avr/sleep.h>
 
 #define LEDpin 13
 
@@ -37,7 +23,7 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); } // interrupt handler for JeeLabs Slee
 #include <EEPROM.h>
 
 // ID of the settings block
-#define CONFIG_VERSION "mjh"
+#define CONFIG_VERSION "hjm"
 #define CONFIG_START 32
 
 struct StoreStruct {
@@ -47,7 +33,7 @@ struct StoreStruct {
 } storage = {
   CONFIG_VERSION,
   // The default values
-  RF12_868MHZ, 210, 27, true, 20
+  RF12_868MHZ, 210, 1, false, 1
 };
 
 static byte value, stack[20], top;
@@ -94,7 +80,6 @@ void setup() {
   else {
       // USB is connected 
       usb=1;
-      //clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz; not running on battery so go full speed
       for(int i=0;i<10;i++){
           digitalWrite(LEDpin,LOW); 
           delay(50);
@@ -122,8 +107,7 @@ void setup() {
     }
  
   digitalWrite(LEDpin,LOW);  
- 
-  
+   
  /* 
  // Transmission power experimenting, see http://harizanov.com/2013/07/reducing-rfm12b-transmission-power/
  
@@ -131,10 +115,7 @@ void setup() {
  rf12_control(0x9850 | (txPower > 7 ? 7 : txPower)); // !mp,90kHz,MAX OUT               //last byte=power level: 0=highest, 7=lowest
  */
   
-
   power_spi_disable();   
-
-  //if(!usb) { Sleepy::loseSomeTime(10000); }         // Allow some time for power source to recover    
 
 
 }
@@ -143,7 +124,7 @@ void loop() {
   
   digitalWrite(LEDpin,HIGH);  
   power_adc_enable();
-  readVcc(); // discard first reading
+  readVcc(); // scrap first reading
   temptx.supplyV = readVcc(); // Get supply voltage  
   power_adc_disable();
   digitalWrite(LEDpin,LOW);  
@@ -154,10 +135,7 @@ void loop() {
   }
 
   for(int j = 0; j < 1; j++) {    // Sleep for j minutes
-    if(usb==0) 
-      Sleepy::loseSomeTime(storage.sendp*1000); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
-    else 
-      delay(storage.sendp*1000);    
+      dodelay(storage.sendp*1000);    
   }
 }
 
@@ -180,9 +158,7 @@ static void rfwrite(){
              power_spi_disable();        
              return; 
            }       // Return if ACK received
-       
-        if(!usb) Sleepy::loseSomeTime(RETRY_PERIOD*1000); // If no ack received wait and try again
-        else delay(RETRY_PERIOD*1000);       
+        dodelay(RETRY_PERIOD*1000); // If no ack received wait and try again
        }
      }
      else {
@@ -214,22 +190,29 @@ static void rfwrite(){
 // Read current supply voltage
 //--------------------------------------------------------------------------------------------------
  long readVcc() {
+  byte oldADMUX=ADMUX;  //Save ADC state
+  byte oldADCSRA=ADCSRA; 
+  byte oldADCSRB=ADCSRB;
+  
    long result;
    // Read 1.1V reference against Vcc
 //   if(usb==0) clock_prescale_set(clock_div_1);   //Make sure we run @ 8Mhz
    ADCSRA |= bit(ADEN); 
    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);  // For ATmega32u4
-   Sleepy::loseSomeTime(2);
+   dodelay(2);
    ADCSRA |= _BV(ADSC); // Convert
    while (bit_is_set(ADCSRA,ADSC));
    result = ADCL;
    result |= ADCH<<8;
    result = 1126400L / result; // Back-calculate Vcc in mV
    ADCSRA &= ~ bit(ADEN); 
-  // if(usb==0) clock_prescale_set(clock_div_2);     
+//   if(usb==0) clock_prescale_set(clock_div_2);     
+   
+   ADCSRA=oldADCSRA; // restore ADC state
+   ADCSRB=oldADCSRB;
+   ADMUX=oldADMUX;
    return result;
 } 
-//########################################################################################################################
 
 
 void powersave() {
@@ -400,4 +383,18 @@ static void showHelp() {
     showString(PSTR(" seconds\n"));
 }
 
-
+void dodelay(unsigned int ms){
+    if(usb==0) {
+      byte oldADCSRA=ADCSRA;
+      byte oldADCSRB=ADCSRB;
+      byte oldADMUX=ADMUX;
+      
+      Sleepy::loseSomeTime(ms); //JeeLabs power save function: enter low power mode for x seconds (valid range 16-65000 ms)
+      
+      ADCSRA=oldADCSRA; // restore ADC state
+      ADCSRB=oldADCSRB;
+      ADMUX=oldADMUX;
+    }
+    else 
+      delay(ms);    
+}
