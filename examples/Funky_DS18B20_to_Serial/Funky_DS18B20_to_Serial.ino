@@ -2,7 +2,7 @@
 // To use on Funky v3 without Pull-up reistor, check Josh's post and his one wire library port
 // http://wp.josh.com/2014/06/23/no-external-pull-up-needed-for-ds18b20-temp-sensor/
 
-#include <OneWire.h>   // http://www.pjrc.com/teensy/arduino_libraries/OneWire.zip
+#include <OneWire.h>   // https://github.com/bigjosh/OneWireNoResistor/archive/master.zip
 #include <DallasTemperature.h>  // http://download.milesburton.com/Arduino/MaximTemperature/DallasTemperature_371Beta.zip
 #define TEMPERATURE_PRECISION 9
  
