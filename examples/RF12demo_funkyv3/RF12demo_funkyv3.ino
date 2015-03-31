@@ -1,14 +1,3 @@
-// ****NOTE: For Funky v3 please modify Jeelib's RF12.cpp definition for RFM_IRQ to 0 ******
-
-//#elif defined(__AVR_ATmega32U4__) //Arduino Leonardo 
-//
-//#define RFM_IRQ     0       // PD0, INT0, Digital3 
-//#define SS_DDR      DDRB
-//#define SS_PORT     PORTB
-//#define SS_BIT      6       // Dig10, PB6
-
-
-
 /// @dir RF12demo
 /// Configure some values in EEPROM for easy config of the RF12 later on.
 // 2009-05-06 <jc@wippler.nl> http://opensource.org/licenses/mit-license.php
